@@ -1,6 +1,7 @@
 #include <M5Unified.h>
 #include <PubSubClient.h>
 #include <WiFi.h>
+#include <sstream>
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -8,6 +9,7 @@ PubSubClient client(espClient);
 const char* ssid        = "carmen";
 const char* password    = "password";
 const char* mqtt_server = "test.mosquitto.org";
+const char* client_name = "AtomS3ThermalCamera";
 
 #define MSG_BUFFER_SIZE (1000*4)
 char msg[MSG_BUFFER_SIZE];
@@ -21,21 +23,27 @@ const byte MLX90640_address = 0x33; //Default 7-bit unshifted address of the MLX
 
 #define COLS   32
 #define ROWS   24
-#define COLS_2 (COLS * 2)
-#define ROWS_2 (ROWS * 2)
+#define COLS_2 (COLS * 2)   // not used
+#define ROWS_2 (ROWS * 2)   // not used
 
-float pixelsArraySize = COLS * ROWS;
+float pixelsArraySize = COLS * ROWS;// not used
 float pixels[COLS * ROWS];
-float pixels_2[COLS_2 * ROWS_2];
-float reversePixels[COLS * ROWS];
+float pixels_2[COLS_2 * ROWS_2];    // not used
+float reversePixels[COLS * ROWS];   // not used
+
+// coordinates of the single pixel
+int single_pixel[2];
+// int x_pixel = 0;
+// int y_pixel = 0;
+
 
 byte speed_setting = 2;
-bool reverseScreen = false;
+bool reverseScreen = false;         // not used
 
 #define INTERPOLATED_COLS 32
 #define INTERPOLATED_ROWS 32
 
-static float mlx90640To[COLS * ROWS];
+static float mlx90640To[COLS * ROWS];   // not used
 paramsMLX90640 mlx90640;
 
 // Temperature ranges
@@ -45,7 +53,7 @@ int min_cam_v = -40;
 int MAXTEMP      = 35;
 int max_v        = 35;
 int max_cam_v    = 300;
-int resetMaxTemp = 45;
+int resetMaxTemp = 45;      // not used
 
 // UI state for button cycling
 int ui_mode = 0; // 0: normal, 1: min temp adjust, 2: max temp adjust, 3: reset
@@ -95,51 +103,65 @@ void infodisplay(void);
 
 long loopTime, startTime, endTime, fps;
 
+// defines what to do when a message is recieved 
 void callback(char* topic, byte* payload, unsigned int length) {
-   String message="";
-   for (int i=0;i<length;i++) {
-     message+=(char)payload[i];
-   }
-   Serial.print("Mqtt command:");
-   Serial.println(message);
-   if(message=="1") {
-     Serial.println("Enable");
-     client.publish("/air/status","1");
-   } else {
-    client.publish("/air/status","0");
-    Serial.println("Disable");
-   }
+    M5.Display.printf("recieved on topic ");
+    M5.Display.print(topic);
+    String message="";
+    for (int i=0;i<length;i++) {
+      message+=(char)payload[i];
+    }
+
+
+    if(topic="/singlecameras/camera1//air/control"){    
+        if(message=="1") {
+            Serial.println("Enable");
+            client.publish("/air/status","1");
+        } else {
+            client.publish("/air/status","0");
+            Serial.println("Disable");    }
+    }
+
+    if(topic="/singlecameras/camera1/which_pixel"){
+        // get x and y coordinate of the desired pixel
+        std::stringstream ss = std::stringstream(message.c_str());
+        int f;
+        for (int i=0; i<2;i++){
+            ss >> f;
+            single_pixel[i] = f;
+        }
+
+    }
+
 }
 
+// connects or reconnects to MQTT
+// connects -> subscribes to topic
+// no -> waits 3 seconds
 void reconnect(){
-  if (client.connect("AtomS3ThermalCamera213")) {
-    Serial.println("connected");
-    client.subscribe("/air/control");
-    Serial.println("subscribed");
-  } else {
-    Serial.println("Failed connecting");
-  }
+    M5.Display.fillScreen(TFT_BLACK);
+    M5.Display.printf("Connecting to MQTT...");
+    if (client.connect(client_name)) {
+    client.subscribe("/singlecameras/camera1//air/control");
+    client.subscribe("/singlecameras/camera1/which_pixel");
+
+    M5.Display.printf("Connected and subscribed");
+    delay(1000);
+
+    } 
+    else {
+    M5.Display.printf("Failed MQTT connection, rc=");
+    M5.Display.print(client.state());
+    M5.Display.printf(", wait 3 s");
+    delay(3000);
+    }
 }
 
 void setup() {
     Serial.begin(115200);   // Sets the data rate in bits per second (baud) for serial data transmission
     auto cfg = M5.config();
     M5.begin(cfg);
-   
-    M5.Display.print("\nConnecting WiFi...\n");
-    WiFi.mode(WIFI_STA);    // option specifies client only
-    WiFi.begin(ssid, password);
-
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        M5.Display.print(".");
-    }
-    M5.Display.printf("\nSuccess\n");
-    
-    client.setServer(mqtt_server, 1883);    // default unencrypted MQTT port is 1883
-    client.setCallback(callback); 
-    client.setBufferSize(256+4*768);
-    
+       
     // Initialize I2C for ATOMS3
     Wire.begin(2, 1);  // SDA=2, SCL=1 for Grove port
     Wire.setClock(450000);
@@ -150,7 +172,6 @@ void setup() {
         delay(100);
     }
     M5.Display.printf("\nATOMS3 MLX90640 IR Camera\n");
-    Serial.println("ATOMS3 MLX90640 IR Camera"); // pecrchè non stampa queste cose?
     M5.Display.setTextSize(1);
 
     // Initialize MLX90640 sensor
@@ -164,20 +185,37 @@ void setup() {
 
     MLX90640_SetRefreshRate(MLX90640_address, 0x02);    // set rate to 2 Hz (0.5 Hz-64 Hz)
 
-    // Setup display
+    // Connect to wifi
+    M5.Display.print("\nConnecting WiFi...\n");
+    WiFi.mode(WIFI_STA);    // option specifies client only
+    WiFi.begin(ssid, password);
+
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        M5.Display.print(".");
+    }
+    M5.Display.printf("\nConnected!\n");
+
+    // Configure MQTT 
+    client.setServer(mqtt_server, 1883);    // default unencrypted MQTT port is 1883
+    client.setCallback(callback); 
+    client.setBufferSize(256+4*768);
+    
+    delay(1000);    // wait 1 s
+
+    // Setup display to show image and info
     M5.Display.fillScreen(TFT_BLACK);
     infodisplay();
 }
 
 void loop() {
     M5.update();
-/*    if (!client.connected()) {
-      Serial.println("Reconnecting to MQTT");
-      reconnect();
-      
+    if (!client.connected()) {
+    //   Serial.println("Reconnecting to MQTT");
+        reconnect();
     }
     client.loop();
-*/
+
     loopTime = millis();
     startTime = loopTime;
     
@@ -310,7 +348,12 @@ void loop() {
         M5.Display.drawLine(48, 58, 48, 70, TFT_WHITE);  // vertical line
         M5.Display.drawLine(42, 64, 54, 64, TFT_WHITE);  // horizontal line
     }
-    
+
+    // Draw crosshair at pixel
+    M5.Display.drawCircle(single_pixel[0]*4, single_pixel[1]*4, 3, TFT_BLACK); // TODO: check consistency of coordinate systems
+    M5.Display.drawLine(single_pixel[0]*4, single_pixel[1]*4-6, single_pixel[0]*4, single_pixel[1]*4+6, TFT_BLACK);
+    M5.Display.drawLine(single_pixel[0]*4-6, single_pixel[1]*4, single_pixel[0]*4+6, single_pixel[1]*4, TFT_BLACK);
+
     loopTime = millis();
     endTime = loopTime;
     fps = 1000 / (endTime - startTime);
@@ -330,7 +373,7 @@ void loop() {
     }
     
     // MQTT publishing
-    client.connect("AtomS3ThermalCamera");
+    client.connect(client_name);
     bool r = client.publish("/singlecameras/camera1/image", (byte *) pixels, 4*768); 
     Serial.println(r);
     client.publish("/singlecameras/camera1/check", r?"ok":"ko");
@@ -344,6 +387,8 @@ void infodisplay(void) {
     M5.Display.setTextColor(TFT_WHITE);
     M5.Display.setTextSize(1);
     M5.Display.setCursor(98, 5);
+    // M5.Display.setCursor(single_pixel[0], single_pixel[1]);
+
     M5.Display.printf("%dC-%dC", MINTEMP, MAXTEMP);
 }
 

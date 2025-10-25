@@ -166,3 +166,4 @@ trash/
 bin/
 README_ATOMS3.md 
 PORTING_GUIDE.md
+.vscode

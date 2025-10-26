@@ -49,14 +49,14 @@ paramsMLX90640 mlx90640;
 // Temperature ranges
 int MINTEMP   = -20;
 int min_v     = 24;
-int min_cam_v = -40;
+int min_cam_v = -40;        // minumum temp the sensor can measure
 int MAXTEMP      = 35;
 int max_v        = 35;
-int max_cam_v    = 300;
+int max_cam_v    = 300;     // maximum temp the sensor can measure
 int resetMaxTemp = 45;      // not used
 
-// UI state for button cycling
-int ui_mode = 0; // 0: normal, 1: min temp adjust, 2: max temp adjust, 3: reset
+// Time interval (in ms) between temperature scale readjustments
+long time_interval = 5000;
 
 // Color palette
 const uint16_t camColors[] = {
@@ -100,8 +100,10 @@ float bicubicInterpolate(float p[], float x, float y);
 void interpolate_image(float *src, uint8_t src_rows, uint8_t src_cols, float *dest, uint8_t dest_rows, uint8_t dest_cols);
 void drawpixels(float *p, uint8_t rows, uint8_t cols, uint8_t boxWidth, uint8_t boxHeight, boolean showVal);
 void infodisplay(void);
+void auto_scale(int max, int min);
+void draw_crosshair(int x, int y, int color);
 
-long loopTime, startTime, endTime, fps;
+long loopTime, startTime, endTime, fps, lastUpdate;
 
 // defines what to do when a message is recieved 
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -137,23 +139,24 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 // connects or reconnects to MQTT
 // connects -> subscribes to topic
-// no -> waits 3 seconds
+// no -> waits 2 seconds
 void reconnect(){
     M5.Display.fillScreen(TFT_BLACK);
     M5.Display.printf("Connecting to MQTT...");
     if (client.connect(client_name)) {
     client.subscribe("/singlecameras/camera1//air/control");
     client.subscribe("/singlecameras/camera1/which_pixel");
+    client.subscribe("/singlecameras/camera1/which_area");
 
     M5.Display.printf("Connected and subscribed");
-    delay(1000);
+    delay(500);
 
     } 
     else {
     M5.Display.printf("Failed MQTT connection, rc=");
     M5.Display.print(client.state());
-    M5.Display.printf(", wait 3 s");
-    delay(3000);
+    M5.Display.printf(", wait 2 s");
+    delay(2000);
     }
 }
 
@@ -183,7 +186,8 @@ void setup() {
     status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640);
     if (status != 0) Serial.println("Parameter extraction failed");
 
-    MLX90640_SetRefreshRate(MLX90640_address, 0x02);    // set rate to 2 Hz (0.5 Hz-64 Hz)
+    // MLX90640_SetRefreshRate(MLX90640_address, 0x02);    // set rate to 2 Hz (0.5 Hz-64 Hz)
+    MLX90640_SetRefreshRate(MLX90640_address, 0x03);    // set rate to 4 Hz
 
     // Connect to wifi
     M5.Display.print("\nConnecting WiFi...\n");
@@ -211,7 +215,6 @@ void setup() {
 void loop() {
     M5.update();
     if (!client.connected()) {
-    //   Serial.println("Reconnecting to MQTT");
         reconnect();
     }
     client.loop();
@@ -219,37 +222,7 @@ void loop() {
     loopTime = millis();
     startTime = loopTime;
     
-    // Handle button for ATOMS3 (single button cycling through functions)
-    if (M5.BtnA.wasPressed()) {
-        ui_mode = (ui_mode + 1) % 4; // Cycle through 4 modes
-        
-        switch(ui_mode) {
-            case 0: // Normal mode
-                break;
-            case 1: // Min temp adjust mode
-                if (MINTEMP <= 0) {
-                    MINTEMP = MAXTEMP - 1;
-                } else {
-                    MINTEMP--;
-                }
-                break;
-            case 2: // Max temp adjust mode
-                if (MAXTEMP >= max_cam_v) {
-                    MAXTEMP = MINTEMP + 1;
-                } else {
-                    MAXTEMP++;
-                }
-                break;
-            case 3: // Reset mode
-                MINTEMP = min_v - 1;
-                MAXTEMP = max_v + 1;
-                ui_mode = 0; // Return to normal mode after reset
-                break;
-        }
-        infodisplay();
-    }
-    
-    // Long press for power off (hold for 3 seconds)
+    // Long press button for power off (hold for 3 seconds)
     if (M5.BtnA.pressedFor(3000)) {
         M5.Display.fillScreen(TFT_BLACK);
         M5.Display.setTextColor(YELLOW, BLACK);
@@ -317,10 +290,12 @@ void loop() {
     M5.Display.setTextColor(TFT_WHITE);
 
     if (max_v > max_cam_v || max_v < min_cam_v) {
+        // If the temperature is above/below the maximum/minimum that can be measured,
+        // print error message
         M5.Display.setCursor(98, 10);
         M5.Display.setTextColor(TFT_RED);
         M5.Display.print("Error");
-    } else {
+    } else { // Print max, min and average temperature on display
         // Max temperature
         M5.Display.setCursor(98, 20);
         M5.Display.setTextColor(TFT_RED);
@@ -335,7 +310,6 @@ void loop() {
         M5.Display.setCursor(98, 60);
         M5.Display.print(min_v);
         
-
         // Average temperature
         M5.Display.setCursor(98, 80);
         M5.Display.setTextColor(TFT_GREEN);
@@ -344,15 +318,19 @@ void loop() {
         M5.Display.printf("%.1fC", avg_v);
         
         // Draw crosshair at center of thermal image
-        M5.Display.drawCircle(48, 64, 3, TFT_WHITE);  // Center of 96px wide image
-        M5.Display.drawLine(48, 58, 48, 70, TFT_WHITE);  // vertical line
-        M5.Display.drawLine(42, 64, 54, 64, TFT_WHITE);  // horizontal line
+        draw_crosshair(48, 64, TFT_WHITE);
+
+        // Draw crosshair at single pixel
+        draw_crosshair(single_pixel[0]*4, single_pixel[1]*4, TFT_BLACK); // TODO: check consistency of coordinate systems
+
+        M5.Display.printf("%dC-%dC", MINTEMP, MAXTEMP); // update max/min temperature info shown on display
     }
 
-    // Draw crosshair at pixel
-    M5.Display.drawCircle(single_pixel[0]*4, single_pixel[1]*4, 3, TFT_BLACK); // TODO: check consistency of coordinate systems
-    M5.Display.drawLine(single_pixel[0]*4, single_pixel[1]*4-6, single_pixel[0]*4, single_pixel[1]*4+6, TFT_BLACK);
-    M5.Display.drawLine(single_pixel[0]*4-6, single_pixel[1]*4, single_pixel[0]*4+6, single_pixel[1]*4, TFT_BLACK);
+    // Update the temperature scale every 5 seconds
+    if (loopTime-lastUpdate>time_interval){
+        lastUpdate = loopTime;
+        auto_scale(max_v, min_v);
+    }
 
     loopTime = millis();
     endTime = loopTime;
@@ -363,19 +341,11 @@ void loop() {
     M5.Display.setTextColor(TFT_WHITE);
     M5.Display.printf("fps:%d", (int)fps);
     
-    // Show current UI mode
-    M5.Display.setCursor(98, 120);
-    switch(ui_mode) {
-        case 0: M5.Display.print("NORM"); break;
-        case 1: M5.Display.print("MIN"); break;
-        case 2: M5.Display.print("MAX"); break;
-        case 3: M5.Display.print("RST"); break;
-    }
-    
     // MQTT publishing
     client.connect(client_name);
     bool r = client.publish("/singlecameras/camera1/image", (byte *) pixels, 4*768); 
     Serial.println(r);
+    M5.Display.println(r);
     client.publish("/singlecameras/camera1/check", r?"ok":"ko");
     String jsonPayload = String("{\"tmax\":") + String(max_v) + ",\"tmin\":" + String(min_v) + ",\"tavg\":" + String(avg_v) + "}";
     client.publish("/singlecameras/camera1/temps", jsonPayload.c_str());
@@ -387,9 +357,6 @@ void infodisplay(void) {
     M5.Display.setTextColor(TFT_WHITE);
     M5.Display.setTextSize(1);
     M5.Display.setCursor(98, 5);
-    // M5.Display.setCursor(single_pixel[0], single_pixel[1]);
-
-    M5.Display.printf("%dC-%dC", MINTEMP, MAXTEMP);
 }
 
 void drawpixels(float *p, uint8_t rows, uint8_t cols, uint8_t boxWidth, uint8_t boxHeight, boolean showVal) {
@@ -411,6 +378,20 @@ void drawpixels(float *p, uint8_t rows, uint8_t cols, uint8_t boxWidth, uint8_t 
             M5.Display.fillRect(boxWidth * y, boxHeight * x, boxWidth, boxHeight, camColors[colorIndex]);
         }
     }
+}
+
+// Set the maximum and minimum for the temperature color scale as
+// the min/max measured minus/plus 10% of their difference
+void auto_scale(int max, int min){
+    MAXTEMP = max + (max - min)*0.1;
+    MINTEMP = min - (max - min)*0.1;
+}
+
+// Draw crosshair at the specified position
+void draw_crosshair(int x, int y, int color){
+    M5.Display.drawCircle(x, y, 3, color);  // Center of 96px wide image
+    M5.Display.drawLine(x, y-6, x, y+6, color);  // vertical line
+    M5.Display.drawLine(x-6, y, x+6, y, color);  // horizontal line
 }
 
 // Interpolation functions

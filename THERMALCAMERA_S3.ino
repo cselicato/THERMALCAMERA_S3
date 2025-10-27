@@ -2,6 +2,7 @@
 #include <PubSubClient.h>
 #include <WiFi.h>
 #include <sstream>
+#include <vector>
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -28,15 +29,14 @@ float pixels[COLS * ROWS];
 
 // coordinates of the single pixel
 int single_pixel[2];
+std::vector<std::vector<int>> single_pixels;
 
 
 byte speed_setting = 2;
-bool reverseScreen = false;         // not used
 
 #define INTERPOLATED_COLS 32
-#define INTERPOLATED_ROWS 32
+#define INTERPOLATED_ROWS 32 // perchè sono 32?
 
-static float mlx90640To[COLS * ROWS];   // not used
 paramsMLX90640 mlx90640;
 
 // Temperature ranges
@@ -116,15 +116,32 @@ void callback(char* topic, byte* payload, unsigned int length) {
             Serial.println("Disable");    }
     }
 
-    if(topic="/singlecameras/camera1/which_pixel"){
+    // if(topic="/singlecameras/camera1/which_pixel"){
+    if(topic="/singlecameras/camera1/single_pixels/coord"){
         // get x and y coordinate of the desired pixel
         std::stringstream ss = std::stringstream(message.c_str());
         int f;
+        std::vector<int> coord;
         for (int i=0; i<2;i++){
             ss >> f;
             single_pixel[i] = f;
+            coord.push_back(f);
+        }
+        single_pixels.push_back(coord);
+
+        std::ostringstream oss;
+        for (const auto& pair : single_pixels) {
+            oss << '(';
+            for (size_t i = 0; i < pair.size(); ++i) {
+                oss << pair[i];
+                if (i + 1 < pair.size())
+                    oss << ' ';
+            }
+            oss << ") ";
         }
 
+        std::string result = oss.str();
+        client.publish("/singlecameras/camera1/pixel_check", result.c_str());
     }
 
 }
@@ -134,11 +151,13 @@ void callback(char* topic, byte* payload, unsigned int length) {
 // no -> waits 2 seconds
 void reconnect(){
     M5.Display.fillScreen(TFT_BLACK);
+    M5.Display.setCursor(5, 5);
     M5.Display.printf("Connecting to MQTT...");
     if (client.connect(client_name)) {
-    client.subscribe("/singlecameras/camera1//air/control");
+    client.subscribe("/singlecameras/camera1/air/control");
     client.subscribe("/singlecameras/camera1/which_pixel");
     client.subscribe("/singlecameras/camera1/which_area");
+    client.subscribe("/singlecameras/camera1/single_pixels/coord");
 
     M5.Display.printf("Connected and subscribed");
     delay(500);
@@ -342,6 +361,24 @@ void loop() {
     client.publish("/singlecameras/camera1/check", r?"ok":"ko");
     String jsonPayload = String("{\"tmax\":") + String(max_v) + ",\"tmin\":" + String(min_v) + ",\"tavg\":" + String(avg_v) + "}";
     client.publish("/singlecameras/camera1/temps", jsonPayload.c_str());
+    if (single_pixels.size()>0){
+        client.publish("/singlecameras/camera1/pixels/data", pixel_data(single_pixels,pixels).c_str());
+    }
+    
+
+}
+
+String pixel_data(std::vector<std::vector<int>> positions, float values[COLS * ROWS]){
+    String out_msg;
+
+    // loop on positions
+    for(int i=0; i<positions.size(); i++){
+        std::vector<int> pos = positions[i];
+        float val = values[COLS*pos[1] + pos[0]];
+        out_msg = out_msg + "("+ String(pos[0]) + " " + String(pos[1]) + " " + String(val) + ")";
+    }
+
+    return out_msg;
 }
 
 void infodisplay(void) {

@@ -28,7 +28,7 @@ size = (960,720)
 fps = 4
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 # TODO: check if more than one video can be saved
-video = cv2.VideoWriter('bho.mp4', fourcc, fps, size, isColor=True) 
+video = cv2.VideoWriter('test.mp4', fourcc, fps, size, isColor=True)
 filming = False
 
 def on_connect(client, userdata, flags, rc):
@@ -65,13 +65,13 @@ def on_message(client, userdata, msg):
             print("Saved output video")
             filming = False
 
-
 # Defines what to do when  there is a mouse click on the figure:
 # if area button is not clicked, get point and publish it
 # if it is clicked define area (only one area at the time)
 def on_click(event):
     global click_count
     global area
+    global single_pixels
 
     if not event.inaxes == ax:
         # when the click is outside of the axes do nothing
@@ -83,10 +83,9 @@ def on_click(event):
 
     if not select_area.get_status()[0]:
         # if area button is not clicked get point coordinates and publish them
-        i = len(single_pixels)  # get point index (starting from 0)
         single_pixels = np.append(single_pixels, [(x, y)], axis=0)  # append pixel to array
 
-        client.publish(f"/singlecameras/camera1/P_{i}/coord", f"{x} {y}")   # publish pixel position
+        client.publish("/singlecameras/camera1/single_pixels/coord", f"{x} {y}")   # publish pixel position
     else:
         # if area button is clicked define area (two clicks are needed)
         if click_count>1:   # reset area with more than two clicks

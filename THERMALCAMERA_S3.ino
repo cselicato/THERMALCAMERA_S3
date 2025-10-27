@@ -23,18 +23,11 @@ const byte MLX90640_address = 0x33; //Default 7-bit unshifted address of the MLX
 
 #define COLS   32
 #define ROWS   24
-#define COLS_2 (COLS * 2)   // not used
-#define ROWS_2 (ROWS * 2)   // not used
 
-float pixelsArraySize = COLS * ROWS;// not used
 float pixels[COLS * ROWS];
-float pixels_2[COLS_2 * ROWS_2];    // not used
-float reversePixels[COLS * ROWS];   // not used
 
 // coordinates of the single pixel
 int single_pixel[2];
-// int x_pixel = 0;
-// int y_pixel = 0;
 
 
 byte speed_setting = 2;
@@ -53,7 +46,6 @@ int min_cam_v = -40;        // minumum temp the sensor can measure
 int MAXTEMP      = 35;
 int max_v        = 35;
 int max_cam_v    = 300;     // maximum temp the sensor can measure
-int resetMaxTemp = 45;      // not used
 
 // Time interval (in ms) between temperature scale readjustments
 long time_interval = 5000;
@@ -115,7 +107,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     }
 
 
-    if(topic="/singlecameras/camera1//air/control"){    
+    if(topic="/singlecameras/camera1/air/control"){    // the client never publishes on this topic
         if(message=="1") {
             Serial.println("Enable");
             client.publish("/air/status","1");
@@ -322,8 +314,9 @@ void loop() {
 
         // Draw crosshair at single pixel
         draw_crosshair(single_pixel[0]*4, single_pixel[1]*4, TFT_BLACK); // TODO: check consistency of coordinate systems
-
-        M5.Display.printf("%dC-%dC", MINTEMP, MAXTEMP); // update max/min temperature info shown on display
+        M5.Display.setCursor(98, 5);
+        M5.Display.setTextColor(TFT_WHITE);
+        M5.Display.printf("%d-%d", MINTEMP, MAXTEMP); // update max/min temperature info shown on display
     }
 
     // Update the temperature scale every 5 seconds
@@ -356,7 +349,6 @@ void infodisplay(void) {
     M5.Display.fillRect(96, 0, 32, 15, TFT_BLACK);  // Clear top area
     M5.Display.setTextColor(TFT_WHITE);
     M5.Display.setTextSize(1);
-    M5.Display.setCursor(98, 5);
 }
 
 void drawpixels(float *p, uint8_t rows, uint8_t cols, uint8_t boxWidth, uint8_t boxHeight, boolean showVal) {

@@ -1,6 +1,7 @@
 #include <M5Unified.h>
 #include <PubSubClient.h>
 #include <WiFi.h>
+#include <SPIFFS.h>
 #include <sstream>
 #include <vector>
 #include <iterator>
@@ -12,6 +13,9 @@ const char* ssid        = "carmen";
 const char* password    = "password";
 const char* mqtt_server = "test.mosquitto.org";
 const char* client_name = "AtomS3ThermalCamera";
+
+const char* file_name   = "/M5Stack/pixels.txt";
+bool SPIFFS_FORMAT = false;  // Whether to initialize the SPIFFS.
 
 #define MSG_BUFFER_SIZE (1000*4)
 char msg[MSG_BUFFER_SIZE];
@@ -31,9 +35,9 @@ float pixels[COLS * ROWS];
 // coordinates of the single pixel
 int single_pixel[2];
 std::vector<std::vector<int>> single_pixels;
-// std::vector<int> area;
 int area[4];
 bool defined_area = false;
+bool reset_pixels = false;
 
 byte speed_setting = 2;
 
@@ -130,6 +134,16 @@ void callback(char* topic, byte* payload, unsigned int length) {
         }
         single_pixels.push_back(coord);
 
+        // add pixel to file
+        File dataFile = SPIFFS.open(file_name,"a");
+        if (dataFile) {
+            dataFile.printf("%d %d\n ", coord.at(0), coord.at(1));
+            dataFile.close();
+            client.publish("/singlecameras/camera1/pixel_file","success");
+        } else {
+            client.publish("/singlecameras/camera1/pixel_file","failed");
+        }
+
         std::ostringstream oss;
         for (const auto& pair : single_pixels) {
             oss << '(';
@@ -145,7 +159,14 @@ void callback(char* topic, byte* payload, unsigned int length) {
         client.publish("/singlecameras/camera1/pixel_check", result.c_str());
     }
 
-    if(strcmp(topic, "/singlecameras/camera1/area") == 0){  // get information about the area
+    else if(strcmp(topic, "/singlecameras/camera1/single_pixels/reset") == 0){
+        draw_crosshair(5,5,TFT_RED);
+        reset_pixels = true;
+        M5.Display.fillScreen(TFT_ORANGE);
+        delay(500);
+    }
+
+    else if(strcmp(topic, "/singlecameras/camera1/area") == 0){  // get information about the area
         // first two numbers are coord. of the lower left point
         // last two are width and height
         std::stringstream ss = std::stringstream(message.c_str());
@@ -169,6 +190,7 @@ void reconnect(){
     client.subscribe("/singlecameras/camera1/air/control");
     client.subscribe("/singlecameras/camera1/area");
     client.subscribe("/singlecameras/camera1/single_pixels/coord");
+    client.subscribe("/singlecameras/camera1/single_pixels/reset");
 
     M5.Display.printf("Connected and subscribed");
     delay(500);
@@ -229,6 +251,49 @@ void setup() {
     
     delay(1000);    // wait 1 s
 
+    // get saved pixels from file
+    if (SPIFFS_FORMAT) {
+        M5.Display.println("\nSPIFFS format start...");
+        SPIFFS.format();    // Formatting SPIFFS.
+        M5.Display.println("SPIFFS format finish");
+    }
+
+    if (SPIFFS.begin()) {  // Start SPIFFS, return 1 on success.
+        M5.Display.println("SPIFFS Begin.");
+    } else {
+        M5.Display.println("SPIFFS Failed to begin.");
+    }
+
+    delay(1000);    // wait 1 s
+    // open file
+    File file = SPIFFS.open(file_name, "r");
+    if (!file) {
+        M5.Display.drawCentreString("FAILED", 64, 40, 2);
+        File dataFile = SPIFFS.open(file_name,"w");  // Create aFile object dafaFile to write information to
+           // file_name in the SPIFFS.
+        dataFile.println("");
+        dataFile.close();  // Close the file when writing is complete.
+    }
+    else {
+        while (file.available()) {
+            String line = file.readStringUntil('\n');  // Read one line
+            line.trim(); // Remove trailing newline or spaces
+            if (line.length() == 0) continue;
+            // add read pixels to vector
+            int ind = line.indexOf(' ');
+            if (ind == -1) continue; // Skip invalid lines
+
+            String xStr = line.substring(0, ind);
+            String yStr = line.substring(ind + 1);
+
+            int x = xStr.toInt();
+            int y = yStr.toInt();
+
+            // Add to pixel vector
+            single_pixels.push_back({x, y});
+        }
+    }
+
     // Setup display to show image and info
     M5.Display.fillScreen(TFT_BLACK);
     infodisplay();
@@ -253,6 +318,15 @@ void loop() {
         esp_deep_sleep_start();
     }
 
+    if (reset_pixels){
+        reset_pixels = false;
+        // when a reset mesage arrives, delete previous pixel coord.
+        single_pixels.clear();
+        File emptyFile = SPIFFS.open(file_name,"w");  // Create aFile object dafaFile to write information to
+           // file_name in the SPIFFS.
+        emptyFile.close();  // Close the file when writing is complete.
+    }
+    
     // Read thermal data
     for (byte x = 0; x < speed_setting; x++) {
         uint16_t mlx90640Frame[834];

@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
 from matplotlib.widgets import CheckButtons
+import matplotlib.patches as patches
 import cv2
 import paho.mqtt.client as mqtt
 
@@ -19,7 +20,7 @@ fig.set_size_inches(5,4)
 im = ax.imshow(np.random.rand(24,32)*30+10, cmap='inferno')
 plt.colorbar(im)
 single_pixels = np.empty((0, 2), dtype=int)     # this will contain the coordinates of the interesting pixels
-area = [[0,0], [0,0]]
+area = np.empty((0, 2))
 click_count = 0     # TODO: change name (misleading) (it should be clear that it's for the definition of the area)
 draw_pixel, = ax.plot([], [], marker='+', color='red', markersize=12, linestyle='None')
 draw_area, = ax.plot([], [], marker='+', color='blue', markersize=12, linestyle='None')
@@ -49,9 +50,22 @@ def on_message(client, userdata, msg):
         flo_arr = [struct.unpack('f', msg.payload[i:i+4])[0] for i in range(0, len(msg.payload), 4)]
         im.set_data(np.array(flo_arr).reshape(24,32))
         fig.canvas.draw() # draw canvas
-        draw_pixel.set_data(single_pixels[:,0],single_pixels[:,1])
+        draw_pixel.set_data(single_pixels[:,0],single_pixels[:,1]) # draw selected pixels on image
         if click_count==2:
-            draw_area.set_data([area[0][0],area[1][0]], [area[0][1],area[1][1]])
+            # draw_area.set_data([area[0][0],area[1][0]], [area[0][1],area[1][1]])
+            # get lower left point
+            # xy = np.empty((0, 2), dtype=int) 
+            xy = np.min(area, axis=0)
+
+            # get width and height
+            w = abs(area[0][0] - area[1][0])
+            h = abs(area[0][1] - area[1][1])
+
+            # Create a Rectangle patch
+            rect = patches.Rectangle(xy, w, h, linewidth=1, edgecolor='b', facecolor='none')
+
+            # Add the patch to the Axes
+            ax.add_patch(rect)
 
         if film_video.get_status()[0]:  # if video button on image is clicked, save frames
             filming = True
@@ -64,6 +78,13 @@ def on_message(client, userdata, msg):
             video.release()
             print("Saved output video")
             filming = False
+
+    if msg.topic == "/singlecameras/camera1/pixels/data":
+        received = msg.payload.decode()
+        test = list(map(str, received.split(',')))
+        print("Recieved: ", received)
+        print("Lenght: ", len(test))
+
 
 # Defines what to do when  there is a mouse click on the figure:
 # if area button is not clicked, get point and publish it
@@ -81,25 +102,30 @@ def on_click(event):
     x = np.floor(event.xdata).astype(int)
     y = np.floor(event.ydata).astype(int)
 
-    if not select_area.get_status()[0]:
+    if select_area.get_status()[0]:
+        # if area button is clicked define area (two clicks are needed)
+        if click_count>1:   # reset area with more than two clicks
+            print("Resetting interesting area, click again")
+            area = np.empty((0, 2))
+            click_count = 0
+            [p.remove() for p in reversed(ax.patches)] # remove drawing of previous area
+            return
+        area = np.append(area, [(x, y)], axis=0)
+        draw_area.set_data(area[:,0],area[:,1])
+        if click_count == 1:
+            # publish the selected area
+            x_left = int(np.min(area, axis=0)[0])
+            y_low = int(np.min(area, axis=0)[1])
+            w = int(abs(area[0][0] - area[1][0]))
+            h = int(abs(area[0][1] - area[1][1]))
+            client.publish("/singlecameras/camera1/area", f"{x_left} {y_low} {w} {h}")
+            print(f"The selected area is ({area[0][0]}, {area[0][1]}), ({area[1][0]}, {area[1][1]})")        
+        click_count += 1
+    else:
         # if area button is not clicked get point coordinates and publish them
         single_pixels = np.append(single_pixels, [(x, y)], axis=0)  # append pixel to array
 
         client.publish("/singlecameras/camera1/single_pixels/coord", f"{x} {y}")   # publish pixel position
-    else:
-        # if area button is clicked define area (two clicks are needed)
-        if click_count>1:   # reset area with more than two clicks
-            print("Resetting interesting area, click again")
-            area = [[0,0], [0,0]]
-            click_count = 0
-            return
-        area[click_count] = [x,y]
-        if click_count == 1:
-            # do something with the selected area
-            client.publish("/singlecameras/camera1/which_area", f"{area[0][0]} {area[0][1]} {area[1][0]} {area[1][1]}")
-            print(f"The selected area is ({area[0][0]}, {area[0][1]}), ({area[1][0]}, {area[1][1]})")        
-        click_count += 1
-
 client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message

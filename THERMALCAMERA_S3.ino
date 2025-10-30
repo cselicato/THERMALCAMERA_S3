@@ -3,6 +3,7 @@
 #include <WiFi.h>
 #include <sstream>
 #include <vector>
+#include <iterator>
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -30,7 +31,9 @@ float pixels[COLS * ROWS];
 // coordinates of the single pixel
 int single_pixel[2];
 std::vector<std::vector<int>> single_pixels;
-
+// std::vector<int> area;
+int area[4];
+bool defined_area = false;
 
 byte speed_setting = 2;
 
@@ -106,8 +109,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
       message+=(char)payload[i];
     }
 
-
-    if(topic="/singlecameras/camera1/air/control"){    // the client never publishes on this topic
+    if(strcmp(topic, "/singlecameras/camera1/air/control") == 0){    // TODO: the python client never publishes on this topic
         if(message=="1") {
             Serial.println("Enable");
             client.publish("/air/status","1");
@@ -116,12 +118,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
             Serial.println("Disable");    }
     }
 
-    // if(topic="/singlecameras/camera1/which_pixel"){
-    if(topic="/singlecameras/camera1/single_pixels/coord"){
-        // get x and y coordinate of the desired pixel
+    if(strcmp(topic, "/singlecameras/camera1/single_pixels/coord") == 0){
+        // get x and y coordinate of the desired pixel and add them to single_pixels
+        std::vector<int> coord;
         std::stringstream ss = std::stringstream(message.c_str());
         int f;
-        std::vector<int> coord;
         for (int i=0; i<2;i++){
             ss >> f;
             single_pixel[i] = f;
@@ -144,6 +145,17 @@ void callback(char* topic, byte* payload, unsigned int length) {
         client.publish("/singlecameras/camera1/pixel_check", result.c_str());
     }
 
+    if(strcmp(topic, "/singlecameras/camera1/area") == 0){  // get information about the area
+        // first two numbers are coord. of the lower left point
+        // last two are width and height
+        std::stringstream ss = std::stringstream(message.c_str());
+        int f;
+        for (int i=0; i<4;i++){
+            ss >> f;
+            area[i] = f;
+        }
+        defined_area = true;
+    }
 }
 
 // connects or reconnects to MQTT
@@ -155,8 +167,7 @@ void reconnect(){
     M5.Display.printf("Connecting to MQTT...");
     if (client.connect(client_name)) {
     client.subscribe("/singlecameras/camera1/air/control");
-    client.subscribe("/singlecameras/camera1/which_pixel");
-    client.subscribe("/singlecameras/camera1/which_area");
+    client.subscribe("/singlecameras/camera1/area");
     client.subscribe("/singlecameras/camera1/single_pixels/coord");
 
     M5.Display.printf("Connected and subscribed");
@@ -276,7 +287,7 @@ void loop() {
     min_v = 999;   // Start with very high value
     float avg_v = 0;
     int valid_pixels = 0;
-    int spot_v = pixels[384];  // Center pixel (768/2 = 384)
+    int spot_v = pixels[384];  // Center pixel (768/2 = 384) not used
     
     // Use COLS * ROWS for actual pixel count
     for (int itemp = 0; itemp < COLS * ROWS; itemp++) {
@@ -361,8 +372,13 @@ void loop() {
     client.publish("/singlecameras/camera1/check", r?"ok":"ko");
     String jsonPayload = String("{\"tmax\":") + String(max_v) + ",\"tmin\":" + String(min_v) + ",\"tavg\":" + String(avg_v) + "}";
     client.publish("/singlecameras/camera1/temps", jsonPayload.c_str());
+    // if at least one pixel is defined, publish pixel data
     if (single_pixels.size()>0){
         client.publish("/singlecameras/camera1/pixels/data", pixel_data(single_pixels,pixels).c_str());
+    }
+    // if area is defined, publish its data
+    if(defined_area){    // if area is not defined there is nothing to publish
+        client.publish("/singlecameras/camera1/area/data", area_data(area,pixels).c_str());
     }
     
 
@@ -375,12 +391,41 @@ String pixel_data(std::vector<std::vector<int>> positions, float values[COLS * R
     for(int i=0; i<positions.size(); i++){
         std::vector<int> pos = positions[i];
         float val = values[COLS*pos[1] + pos[0]];
-        out_msg = out_msg + "("+ String(pos[0]) + " " + String(pos[1]) + " " + String(val) + ")";
+        if (i == positions.size()-1){
+            out_msg = out_msg + String(pos[0]) + " " + String(pos[1]) + " " + String(val);   }
+        else {
+        out_msg = out_msg + String(pos[0]) + " " + String(pos[1]) + " " + String(val) + ",";    }
+        
     }
 
     return out_msg;
 }
 
+String area_data(int a[4], float values[COLS * ROWS]){
+    String out_msg;
+    int x = a[0];
+    int y = a[1];
+    int w = a[2];
+    int h = a[3];
+
+    // add data of the interesting area to a vector
+    std::vector<float> temps;
+    for(int i=x; i<x+w;i++){
+        for(int j=y; j<y+h;j++){
+            temps.push_back(values[j*COLS + i]);
+        }
+    }
+    float max = *std::max_element(temps.begin(), temps.end());
+    float min = *std::min_element(temps.begin(), temps.end());
+    float avg = 0.;
+    for(float f : temps){
+        avg += f;
+    }
+    avg = avg/temps.size();
+    out_msg = " max: "+String(max)+" min: "+String(min)+" avg: "+String(avg)+" x: "+String(x)+" y: "+String(y)+" w: "+String(w)+" h: "+String(h);
+
+    return out_msg;
+}
 void infodisplay(void) {
     // Clear and update temperature range display on right side
     M5.Display.fillRect(96, 0, 32, 15, TFT_BLACK);  // Clear top area

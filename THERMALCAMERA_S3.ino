@@ -14,8 +14,8 @@ const char* password    = "password";
 const char* mqtt_server = "test.mosquitto.org";
 const char* client_name = "AtomS3ThermalCamera";
 
-const char* file_name   = "/M5Stack/pixels.txt";
-bool SPIFFS_FORMAT = false;  // Whether to initialize the SPIFFS.
+const char* pixel_fname = "/M5Stack/pixels.txt";
+const char* area_fname  = "/M5Stack/area.txt";
 
 #define MSG_BUFFER_SIZE (1000*4)
 char msg[MSG_BUFFER_SIZE];
@@ -38,6 +38,7 @@ std::vector<std::vector<int>> single_pixels;
 int area[4];
 bool defined_area = false;
 bool reset_pixels = false;
+bool reset_area   = false;
 
 byte speed_setting = 2;
 
@@ -122,7 +123,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
             Serial.println("Disable");    }
     }
 
-    if(strcmp(topic, "/singlecameras/camera1/single_pixels/coord") == 0){
+    if(strcmp(topic, "/singlecameras/camera1/pixels/coord") == 0){
         // get x and y coordinate of the desired pixel and add them to single_pixels
         std::vector<int> coord;
         std::stringstream ss = std::stringstream(message.c_str());
@@ -135,9 +136,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
         single_pixels.push_back(coord);
 
         // add pixel to file
-        File dataFile = SPIFFS.open(file_name,"a");
+        File dataFile = SPIFFS.open(pixel_fname,"a");
         if (dataFile) {
-            dataFile.printf("%d %d\n ", coord.at(0), coord.at(1));
+            dataFile.printf("%d %d\n", coord.at(0), coord.at(1));
             dataFile.close();
             client.publish("/singlecameras/camera1/pixel_file","success");
         } else {
@@ -146,24 +147,22 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
         std::ostringstream oss;
         for (const auto& pair : single_pixels) {
-            oss << '(';
+            // oss << '(';
             for (size_t i = 0; i < pair.size(); ++i) {
                 oss << pair[i];
                 if (i + 1 < pair.size())
                     oss << ' ';
             }
-            oss << ") ";
+            oss << ",";
         }
 
-        std::string result = oss.str();
-        client.publish("/singlecameras/camera1/pixel_check", result.c_str());
+        std::string current = oss.str();
+        current.pop_back(); // remove last comma
+        client.publish("/singlecameras/camera1/pixels/current", current.c_str(), true);
     }
 
-    else if(strcmp(topic, "/singlecameras/camera1/single_pixels/reset") == 0){
-        draw_crosshair(5,5,TFT_RED);
+    else if(strcmp(topic, "/singlecameras/camera1/pixels/reset") == 0){
         reset_pixels = true;
-        M5.Display.fillScreen(TFT_ORANGE);
-        delay(500);
     }
 
     else if(strcmp(topic, "/singlecameras/camera1/area") == 0){  // get information about the area
@@ -176,6 +175,24 @@ void callback(char* topic, byte* payload, unsigned int length) {
             area[i] = f;
         }
         defined_area = true;
+
+        // publish current area as persistent message
+        client.publish("/singlecameras/camera1/area/current", message.c_str(), true);
+        // write area to file (previous one must be overwritten)
+        File currentArea = SPIFFS.open(area_fname,"w");
+        if (currentArea) {
+            // currentArea.printf("%d\n%d\n%d\n%d\n", area[0], area[1], area[2], area[3]);
+            currentArea.printf("%d,%d,%d,%d\n", area[0], area[1], area[2], area[3]);
+
+            currentArea.close();
+            client.publish("/singlecameras/camera1/area_file","success");
+        } else {
+            client.publish("/singlecameras/camera1/area_file","failed");
+        }
+    }
+
+    else if(strcmp(topic, "/singlecameras/camera1/area/reset") == 0){
+        reset_area = true;
     }
 }
 
@@ -189,8 +206,9 @@ void reconnect(){
     if (client.connect(client_name)) {
     client.subscribe("/singlecameras/camera1/air/control");
     client.subscribe("/singlecameras/camera1/area");
-    client.subscribe("/singlecameras/camera1/single_pixels/coord");
-    client.subscribe("/singlecameras/camera1/single_pixels/reset");
+    client.subscribe("/singlecameras/camera1/area/reset");
+    client.subscribe("/singlecameras/camera1/pixels/coord");
+    client.subscribe("/singlecameras/camera1/pixels/reset");
 
     M5.Display.printf("Connected and subscribed");
     delay(500);
@@ -249,34 +267,27 @@ void setup() {
     client.setCallback(callback); 
     client.setBufferSize(256+4*768);
     
-    delay(1000);    // wait 1 s
 
-    // get saved pixels from file
-    if (SPIFFS_FORMAT) {
+    // start SPIFFS
+    if (SPIFFS.begin()) {  // Start SPIFFS, return 1 on success.
+        M5.Display.println("SPIFFS begin.");
+    } else { // Initialize the SPIFFS
         M5.Display.println("\nSPIFFS format start...");
         SPIFFS.format();    // Formatting SPIFFS.
         M5.Display.println("SPIFFS format finish");
     }
 
-    if (SPIFFS.begin()) {  // Start SPIFFS, return 1 on success.
-        M5.Display.println("SPIFFS Begin.");
-    } else {
-        M5.Display.println("SPIFFS Failed to begin.");
-    }
-
     delay(1000);    // wait 1 s
-    // open file
-    File file = SPIFFS.open(file_name, "r");
-    if (!file) {
-        M5.Display.drawCentreString("FAILED", 64, 40, 2);
-        File dataFile = SPIFFS.open(file_name,"w");  // Create aFile object dafaFile to write information to
-           // file_name in the SPIFFS.
-        dataFile.println("");
-        dataFile.close();  // Close the file when writing is complete.
+
+    // recover pixel coordinates from file
+    File file_pixels = SPIFFS.open(pixel_fname, "r");
+    if (!file_pixels) {   // if no file is found, create an empty one
+        File new_pixels = SPIFFS.open(pixel_fname,"w");  // Create file object to write information
+        new_pixels.close();
     }
-    else {
-        while (file.available()) {
-            String line = file.readStringUntil('\n');  // Read one line
+    else { // read file line by line
+        while (file_pixels.available()) {
+            String line = file_pixels.readStringUntil('\n');  // Read one line
             line.trim(); // Remove trailing newline or spaces
             if (line.length() == 0) continue;
             // add read pixels to vector
@@ -291,6 +302,42 @@ void setup() {
 
             // Add to pixel vector
             single_pixels.push_back({x, y});
+        }
+    }
+
+    // recover area from file
+    File file_area = SPIFFS.open(area_fname, "r");
+    if (!file_area) {   // if no file is found, create an empty one
+        M5.Display.fillScreen(TFT_RED);
+        delay(1000);
+        File new_area = SPIFFS.open(area_fname,"w");  // Create file object to write information
+        new_area.close();
+    }
+    else { // read file line by line
+        M5.Display.fillScreen(TFT_GREEN);
+        delay(1000);
+        // int ind = 0;
+        while (file_area.available()) {
+            String line = file_area.readStringUntil('\n');
+            line.trim();
+            line.replace(" ", "");
+
+            // Split line by commas
+            int comma1 = line.indexOf(',');
+            int comma2 = line.indexOf(',', comma1 + 1);
+            int comma3 = line.indexOf(',', comma2 + 1);
+
+            if (comma1 < 0 || comma2 < 0 || comma3 < 0) {
+                Serial.println("Invalid line format");
+                continue;
+            }
+
+            area[0] = line.substring(0, comma1).toInt();
+            area[1] = line.substring(comma1 + 1, comma2).toInt();
+            area[2] = line.substring(comma2 + 1, comma3).toInt();
+            area[3] = line.substring(comma3 + 1).toInt();
+
+
         }
     }
 
@@ -322,9 +369,17 @@ void loop() {
         reset_pixels = false;
         // when a reset mesage arrives, delete previous pixel coord.
         single_pixels.clear();
-        File emptyFile = SPIFFS.open(file_name,"w");  // Create aFile object dafaFile to write information to
-           // file_name in the SPIFFS.
+        File emptyFile = SPIFFS.open(pixel_fname,"w");  // Create aFile object to write information
         emptyFile.close();  // Close the file when writing is complete.
+        client.publish("/singlecameras/camera1/pixels/current", "none", true);
+    }
+
+    if (reset_area){
+        reset_area = false;
+        File emptyFile = SPIFFS.open(area_fname,"w");  // Create aFile object to write information
+        emptyFile.close();  // Close the file when writing is complete.
+        client.publish("/singlecameras/camera1/area/current", "none", true);
+        defined_area = false;
     }
     
     // Read thermal data

@@ -35,8 +35,7 @@ float pixels[COLS * ROWS];
 // coordinates of the single pixel
 int single_pixel[2];
 std::vector<std::vector<int>> single_pixels;
-int area[4];
-bool defined_area = false;
+std::vector<int> area;
 bool reset_pixels = false;
 bool reset_area   = false;
 
@@ -170,19 +169,19 @@ void callback(char* topic, byte* payload, unsigned int length) {
         // last two are width and height
         std::stringstream ss = std::stringstream(message.c_str());
         int f;
+        area.clear();
         for (int i=0; i<4;i++){
             ss >> f;
-            area[i] = f;
+            area.push_back(f);
         }
-        defined_area = true;
 
         // publish current area as persistent message
         client.publish("/singlecameras/camera1/area/current", message.c_str(), true);
         // write area to file (previous one must be overwritten)
         File currentArea = SPIFFS.open(area_fname,"w");
         if (currentArea) {
-            // currentArea.printf("%d\n%d\n%d\n%d\n", area[0], area[1], area[2], area[3]);
-            currentArea.printf("%d,%d,%d,%d\n", area[0], area[1], area[2], area[3]);
+            currentArea.printf("%d\n%d\n%d\n%d\n", area[0], area[1], area[2], area[3]);
+            // currentArea.printf("%d,%d,%d,%d\n", area[0], area[1], area[2], area[3]);
 
             currentArea.close();
             client.publish("/singlecameras/camera1/area_file","success");
@@ -308,36 +307,14 @@ void setup() {
     // recover area from file
     File file_area = SPIFFS.open(area_fname, "r");
     if (!file_area) {   // if no file is found, create an empty one
-        M5.Display.fillScreen(TFT_RED);
-        delay(1000);
         File new_area = SPIFFS.open(area_fname,"w");  // Create file object to write information
         new_area.close();
     }
     else { // read file line by line
-        M5.Display.fillScreen(TFT_GREEN);
-        delay(1000);
-        // int ind = 0;
         while (file_area.available()) {
             String line = file_area.readStringUntil('\n');
             line.trim();
-            line.replace(" ", "");
-
-            // Split line by commas
-            int comma1 = line.indexOf(',');
-            int comma2 = line.indexOf(',', comma1 + 1);
-            int comma3 = line.indexOf(',', comma2 + 1);
-
-            if (comma1 < 0 || comma2 < 0 || comma3 < 0) {
-                Serial.println("Invalid line format");
-                continue;
-            }
-
-            area[0] = line.substring(0, comma1).toInt();
-            area[1] = line.substring(comma1 + 1, comma2).toInt();
-            area[2] = line.substring(comma2 + 1, comma3).toInt();
-            area[3] = line.substring(comma3 + 1).toInt();
-
-
+            area.push_back(line.toInt());
         }
     }
 
@@ -376,10 +353,10 @@ void loop() {
 
     if (reset_area){
         reset_area = false;
+        area.clear();
         File emptyFile = SPIFFS.open(area_fname,"w");  // Create aFile object to write information
         emptyFile.close();  // Close the file when writing is complete.
         client.publish("/singlecameras/camera1/area/current", "none", true);
-        defined_area = false;
     }
     
     // Read thermal data
@@ -506,7 +483,7 @@ void loop() {
         client.publish("/singlecameras/camera1/pixels/data", pixel_data(single_pixels,pixels).c_str());
     }
     // if area is defined, publish its data
-    if(defined_area){    // if area is not defined there is nothing to publish
+    if(area.size() == 4){    // if area is not defined there is nothing to publish
         client.publish("/singlecameras/camera1/area/data", area_data(area,pixels).c_str());
     }
     
@@ -530,7 +507,7 @@ String pixel_data(std::vector<std::vector<int>> positions, float values[COLS * R
     return out_msg;
 }
 
-String area_data(int a[4], float values[COLS * ROWS]){
+String area_data(std::vector<int> a, float values[COLS * ROWS]){
     String out_msg;
     int x = a[0];
     int y = a[1];

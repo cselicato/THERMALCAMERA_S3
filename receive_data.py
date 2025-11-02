@@ -18,7 +18,12 @@ MQTT_PATH = "/singlecameras/camera1/#"
 fig, ax = plt.subplots()
 fig.set_size_inches(4,5)
 im = ax.imshow(np.random.rand(32,24)*30+10, cmap='inferno')
-plt.colorbar(im)
+# create colorbar
+cbar = plt.colorbar(im)
+cbar_ticks = np.linspace(10., 40., num=7, endpoint=True)
+cbar.set_ticks(cbar_ticks)
+cbar.minorticks_on()
+
 # arrays for the coordinates of the interesting pixels and the area
 single_pixels = np.empty((0, 2), dtype=int)
 area = np.empty((0, 4))
@@ -29,21 +34,46 @@ draw_pixel, = ax.plot([], [], marker='+', color='red', markersize=12, linestyle=
 draw_area, = ax.plot([], [], marker='+', color='blue', markersize=12, linestyle='None')
 
 size = (720,960)
-fps = 4# size = (960,720)
-
+fps = 4
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-# TODO: check if more than one video can be saved
+# TODO: find a way to save more than one video
 video = cv2.VideoWriter('test.mp4', fourcc, fps, size, isColor=True)
 filming = False
+
+received = 0    # counter for how many thermal images have been received 
+
+
+def update_cbar(colorbar, min, max):
+    """
+    Update limits of the plotted colorbar
+
+    Sets lower limit of the colorbar to min and upper limit to max, also
+    updates ticks on the colorbar
+
+    Parameters
+    ----------
+    cbar : plt.colorbar
+    min : float
+    max : float 
+    """
+
+    upper = np.ceil(max + (max - min)*0.1)
+    lower = np.floor(min - (max - min)*0.1)
+    
+    colorbar.mappable.set_clim(vmin=lower,vmax=upper)
+    cbar_ticks = np.linspace(lower, upper, num=10, endpoint=True,)
+    colorbar.set_ticks(cbar_ticks)
+
 
 def on_connect(client, userdata, flags, rc):
     """
     Subsciribe to desired topic(s)
-    """
-    print("Connected with result code "+str(rc))
 
-    # Subscribing in on_connect() means that if we lose the connection and
-    # reconnect then subscriptions will be renewed.
+    Subscribing in on_connect() means that if we lose the connection and
+    reconnect then subscriptions will be renewed.
+    """
+
+    print("Connected with result code "+str(rc))
     client.subscribe(MQTT_PATH)
 
 # The callback for when a PUBLISH message is received from the server.
@@ -51,13 +81,24 @@ def on_message(client, userdata, msg):
     global im
     global single_pixels, area
     global filming
+    global received
 
     # an image is recieved from the sensor: plot the image and, if video
-    # button is clicked, take video
+    # button is clicked, add frame to video
     if msg.topic == "/singlecameras/camera1/image":
         flo_arr = [struct.unpack('f', msg.payload[i:i+4])[0] for i in range(0, len(msg.payload), 4)]
         # data must be transposed to match what is shown on AtomS3 display
-        im.set_data(np.array(flo_arr).reshape(24,32).T)
+        thermal_img = np.array(flo_arr).reshape(24,32).T
+        im.set_data(thermal_img)
+
+        if received%10 == 0:
+            # get min and max of the measured temperatures
+            min = np.min(thermal_img)
+            max = np.max(thermal_img)
+
+            update_cbar(cbar, min, max)
+        received += 1
+        
         fig.canvas.draw() # draw canvas
 
         if film_video.get_status()[0]:  # if video button on image is clicked, save frames

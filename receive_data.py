@@ -19,10 +19,14 @@ fig, ax = plt.subplots()
 fig.set_size_inches(5,4)
 im = ax.imshow(np.random.rand(24,32)*30+10, cmap='inferno')
 plt.colorbar(im)
-single_pixels = np.empty((0, 2), dtype=int)     # this will contain the coordinates of the interesting pixels
+# array for the coordinates of the interesting pixels and the area
+single_pixels = np.empty((0, 2), dtype=int)
 area = np.empty((0, 4))
+
+
 clicks = np.empty((0, 2), dtype=int)
-click_count = 0     # TODO: change name (misleading) (it should be clear that it's for the definition of the area)
+click_count = 0     # TODO: change name (misleading)
+                    # (it should be clear that it's for the definition of the area)
 draw_pixel, = ax.plot([], [], marker='+', color='red', markersize=12, linestyle='None')
 draw_area, = ax.plot([], [], marker='+', color='blue', markersize=12, linestyle='None')
 
@@ -34,6 +38,9 @@ video = cv2.VideoWriter('test.mp4', fourcc, fps, size, isColor=True)
 filming = False
 
 def on_connect(client, userdata, flags, rc):
+    """
+    Subsciribe to desired topic
+    """
     print("Connected with result code "+str(rc))
 
     # Subscribing in on_connect() means that if we lose the connection and
@@ -46,33 +53,18 @@ def on_message(client, userdata, msg):
     global single_pixels, area
     global filming
 
-    # an image is recieved from the sensor: plot the image and, if video button is clicked, take video
+    # an image is recieved from the sensor: plot the image and, if video
+    # button is clicked, take video
     if msg.topic == "/singlecameras/camera1/image":
         flo_arr = [struct.unpack('f', msg.payload[i:i+4])[0] for i in range(0, len(msg.payload), 4)]
         im.set_data(np.array(flo_arr).reshape(24,32))
         fig.canvas.draw() # draw canvas
-        draw_pixel.set_data(single_pixels[:,0],single_pixels[:,1]) # draw selected pixels on image
-        if click_count==2:
-            # draw_area.set_data([area[0][0],area[1][0]], [area[0][1],area[1][1]])
-            # get lower left point
-            # xy = np.empty((0, 2), dtype=int) 
-            xy = (area[0][0],area[0][1])
-
-            # get width and height
-            w = area[0][2]
-            h = area[0][3]
-
-            # Create a Rectangle patch
-            rect = patches.Rectangle(xy, w, h, linewidth=1, edgecolor='b', facecolor='none')
-
-            # Add the patch to the Axes
-            ax.add_patch(rect)
 
         if film_video.get_status()[0]:  # if video button on image is clicked, save frames
             filming = True
             img = np.asarray(fig.canvas.renderer.buffer_rgba()) # get image from canvas as an array
             img = cv2.cvtColor(img, cv2.COLOR_RGBA2BGR) # Convert from RGBA to BGR (opencv's default)
-            img = cv2.resize(img, size) # resize image to video size 
+            img = cv2.resize(img, size) # resize image to video size
             video.write(img) # add image to video writer
         
         if (not film_video.get_status()[0]) and filming:
@@ -93,6 +85,8 @@ def on_message(client, userdata, msg):
             for i in range(0, len(current)):
                 coord = list(map(int, current[i].split(' ')))
                 single_pixels = np.append(single_pixels, [coord], axis=0)
+            # draw selected pixels on image
+            draw_pixel.set_data(single_pixels[:,0],single_pixels[:,1])
 
     if msg.topic == "/singlecameras/camera1/area/data":
         print("Area data: ", msg.payload.decode())
@@ -101,13 +95,26 @@ def on_message(client, userdata, msg):
         # get area the camera is already looking at
         if msg.payload.decode() != "none":
             area = np.empty((0, 4), dtype=int)  # forget previous area information
+            [p.remove() for p in reversed(ax.patches)] # remove drawing of previous area
+
             area = np.append(area, [list(map(int, msg.payload.decode().split(' ')))], axis=0)
 
+            xy = (area[0][0],area[0][1])
+            # get width and height
+            w = area[0][2]
+            h = area[0][3]
+            # draw current area
+            rect = patches.Rectangle(xy, w, h, linewidth=1, edgecolor='b', facecolor='none')
+            ax.add_patch(rect)            
 
-# Defines what to do when  there is a mouse click on the figure:
-# if area button is not clicked, get point and publish it
-# if it is clicked define area (only one area at the time)
+
 def on_click(event):
+    """
+    Defines what to do when  there is a mouse click on the figure:
+    if area button is not clicked, get point and publish it
+    if it is clicked define area (only one area at the time)
+    """
+
     global click_count
     global area, clicks
     global single_pixels
@@ -130,7 +137,6 @@ def on_click(event):
             [p.remove() for p in reversed(ax.patches)] # remove drawing of previous area
             return
         clicks = np.append(clicks, [(x, y)], axis=0)
-        # area = np.append(area, [(x, y)], axis=0)
         draw_area.set_data(clicks[:,0],clicks[:,1])
         if click_count == 1:
             # publish the selected area
@@ -140,13 +146,22 @@ def on_click(event):
             h = int(abs(clicks[0][1] - clicks[1][1]))
             area = np.append(area, [(x_left, y_low, w, h)], axis=0)
             client.publish("/singlecameras/camera1/area", f"{x_left} {y_low} {w} {h}")
-            print(f"The selected area is ({clicks[0][0]}, {clicks[0][1]}), ({clicks[1][0]}, {clicks[1][1]})")        
+            print(f"The selected area is ({clicks[0][0]}, {clicks[0][1]}), ({clicks[1][0]}, {clicks[1][1]})")  
+
+            [p.remove() for p in reversed(ax.patches)] # remove drawing of previous area
+
+            # draw current area
+            rect = patches.Rectangle((x_left, y_low), w, h, linewidth=1, edgecolor='b', facecolor='none')
+            ax.add_patch(rect)      
+
         click_count += 1
     else:
         # if area button is not clicked get point coordinates and publish them
         single_pixels = np.append(single_pixels, [(x, y)], axis=0)  # append pixel to array
         # TODO: if coordinates are already present, do not append them
         client.publish("/singlecameras/camera1/pixels/coord", f"{x} {y}")   # publish pixel position
+        draw_pixel.set_data(single_pixels[:,0],single_pixels[:,1]) # draw selected pixels on image
+
 client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message

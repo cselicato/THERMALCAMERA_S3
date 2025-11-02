@@ -16,22 +16,21 @@ MQTT_PATH = "/singlecameras/camera1/#"
 
 # Initialize a list of float as per your data. Below is a random example
 fig, ax = plt.subplots()
-fig.set_size_inches(5,4)
-im = ax.imshow(np.random.rand(24,32)*30+10, cmap='inferno')
+fig.set_size_inches(4,5)
+im = ax.imshow(np.random.rand(32,24)*30+10, cmap='inferno')
 plt.colorbar(im)
-# array for the coordinates of the interesting pixels and the area
+# arrays for the coordinates of the interesting pixels and the area
 single_pixels = np.empty((0, 2), dtype=int)
 area = np.empty((0, 4))
 
-
 clicks = np.empty((0, 2), dtype=int)
-click_count = 0     # TODO: change name (misleading)
-                    # (it should be clear that it's for the definition of the area)
+
 draw_pixel, = ax.plot([], [], marker='+', color='red', markersize=12, linestyle='None')
 draw_area, = ax.plot([], [], marker='+', color='blue', markersize=12, linestyle='None')
 
-size = (960,720)
-fps = 4
+size = (720,960)
+fps = 4# size = (960,720)
+
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 # TODO: check if more than one video can be saved
 video = cv2.VideoWriter('test.mp4', fourcc, fps, size, isColor=True)
@@ -39,7 +38,7 @@ filming = False
 
 def on_connect(client, userdata, flags, rc):
     """
-    Subsciribe to desired topic
+    Subsciribe to desired topic(s)
     """
     print("Connected with result code "+str(rc))
 
@@ -57,7 +56,8 @@ def on_message(client, userdata, msg):
     # button is clicked, take video
     if msg.topic == "/singlecameras/camera1/image":
         flo_arr = [struct.unpack('f', msg.payload[i:i+4])[0] for i in range(0, len(msg.payload), 4)]
-        im.set_data(np.array(flo_arr).reshape(24,32))
+        # data must be transposed to match what is shown on AtomS3 display
+        im.set_data(np.array(flo_arr).reshape(24,32).T)
         fig.canvas.draw() # draw canvas
 
         if film_video.get_status()[0]:  # if video button on image is clicked, save frames
@@ -79,7 +79,10 @@ def on_message(client, userdata, msg):
 
     if msg.topic == "/singlecameras/camera1/pixels/current":
         # get pixels the camera is already looking at
-        if msg.payload.decode() != "none":
+        if msg.payload.decode() == "none":
+            draw_pixel.set_data(np.empty((0)),np.empty((0)))
+            single_pixels = np.empty((0, 2), dtype=int)
+        else:
             current = list(map(str, msg.payload.decode().split(',')))
             # add each pixel to single_pixels
             for i in range(0, len(current)):
@@ -93,7 +96,10 @@ def on_message(client, userdata, msg):
         
     if msg.topic == "/singlecameras/camera1/area/current":
         # get area the camera is already looking at
-        if msg.payload.decode() != "none":
+        if msg.payload.decode() == "none":
+            [p.remove() for p in reversed(ax.patches)] # remove drawing of previous area
+            area = np.empty((0, 4), dtype=int)
+        else:
             area = np.empty((0, 4), dtype=int)  # forget previous area information
             [p.remove() for p in reversed(ax.patches)] # remove drawing of previous area
 
@@ -115,9 +121,7 @@ def on_click(event):
     if it is clicked define area (only one area at the time)
     """
 
-    global click_count
-    global area, clicks
-    global single_pixels
+    global area, clicks, single_pixels
 
     if not event.inaxes == ax:
         # when the click is outside of the axes do nothing
@@ -129,16 +133,17 @@ def on_click(event):
 
     if select_area.get_status()[0]:
         # if area button is clicked define area (two clicks are needed)
-        if click_count>1:   # reset area with more than two clicks
+        clicks = np.append(clicks, [(x, y)], axis=0)
+
+        if clicks.shape[0]>2:   # reset area with more than two clicks
             print("Resetting interesting area, click again")
             area = np.empty((0, 4), dtype=int)
             clicks = np.empty((0, 2), dtype=int)
-            click_count = 0
             [p.remove() for p in reversed(ax.patches)] # remove drawing of previous area
             return
-        clicks = np.append(clicks, [(x, y)], axis=0)
         draw_area.set_data(clicks[:,0],clicks[:,1])
-        if click_count == 1:
+
+        if clicks.shape[0] == 2:    
             # publish the selected area
             x_left = int(np.min(clicks, axis=0)[0])
             y_low = int(np.min(clicks, axis=0)[1])
@@ -154,7 +159,6 @@ def on_click(event):
             rect = patches.Rectangle((x_left, y_low), w, h, linewidth=1, edgecolor='b', facecolor='none')
             ax.add_patch(rect)      
 
-        click_count += 1
     else:
         # if area button is not clicked get point coordinates and publish them
         single_pixels = np.append(single_pixels, [(x, y)], axis=0)  # append pixel to array

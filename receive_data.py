@@ -3,14 +3,16 @@
 """
 
 import struct
-import numpy as np
 from datetime import datetime
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
 from matplotlib.widgets import CheckButtons
 from matplotlib import patches
 import cv2
 import paho.mqtt.client as mqtt
+
+from THERMALCAMERA_S3.videomaker import VideoMaker
 
 MQTT_SERVER = "test.mosquitto.org"
 MQTT_PATH = "/singlecameras/camera1/#"
@@ -37,65 +39,7 @@ draw_area, = ax.plot([], [], marker='+', color='blue', markersize=12, linestyle=
 
 received = 0    # counter for how many thermal images have been received
 
-class Camera:
-    """
-    Class used to save a video of the plot
-    """
-
-    def __init__(self, size=(720,960), fps=4):
-        self.filming = False
-        self.size = size
-        self.fps = fps
-
-    def start_video(self):
-        """
-        Create a VideoWriter object
-
-        Parameters
-        ----------
-        none
-        """
-
-        now = datetime.now() # current date and time
-        time = now.strftime("%H_%M_%S")
-        filename = "out_video/"+time+".mp4"
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        self.video = cv2.VideoWriter(filename, fourcc, self.fps, self.size, isColor=True)
-        self.filming = True
-        print(f"Filming {filename}")
-
-    def add_frame(self, fig):
-        """
-        Add frame to video if filming, else do nothing
-
-        Parameters
-        ----------
-        fig : figure
-        """
-
-        if self.filming:
-            data_arr = np.asarray(fig.canvas.renderer.buffer_rgba())
-            data_arr = cv2.cvtColor(data_arr, cv2.COLOR_RGBA2BGR) # Convert to BGR (opencv's default)
-            data_arr = cv2.resize(data_arr, self.size) # resize image to video size
-            self.video.write(data_arr) # add image to video writer
-        else:
-            pass
-
-    def stop_video(self):
-        """
-        Save output video
-
-        Parameters
-        ----------
-        none
-        """
-
-        self.video.release()
-        self.filming = False
-        print(f"Stopped filming, saved output video")
-
-
-videocamera = Camera()
+video = VideoMaker()
 
 
 def update_cbar(colorbar, min, max):
@@ -133,7 +77,7 @@ def on_connect(client, userdata, flags, reason_code, properties):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
-    global im, single_pixels, area, filming, received
+    global im, single_pixels, area, received
 
     # an image is recieved from the sensor: plot the image and, if video
     # button is clicked, add frame to video
@@ -154,10 +98,10 @@ def on_message(client, userdata, msg):
         fig_text.set_text(datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
         fig.canvas.draw() # draw canvas
 
-        videocamera.add_frame(fig)
+        video.add_frame(fig)
 
-        if (not film_video.get_status()[0]) and videocamera.filming:
-            videocamera.stop_video()    # TODO: this should be moved elsewhere, to make sure 
+        if (not film_video.get_status()[0]) and video.filming:
+            video.stop_video()    # TODO: this should be moved elsewhere, to make sure 
                                         # video is saved even if the AtomS3 loses the connection
 
     if msg.topic == "/singlecameras/camera1/pixels/data":
@@ -277,9 +221,9 @@ film_video = CheckButtons(plt.axes([0.1, 0.9, 0.3, 0.075]), ['Video',], [False,]
                           check_props={'color':'green', 'linewidth':1})
 
 def button_callback(label):
-    global videocamera
-    if not videocamera.filming:
-        videocamera.start_video()
+    global video
+    if not video.filming:
+        video.start_video()
 
 film_video.on_clicked(button_callback)
 

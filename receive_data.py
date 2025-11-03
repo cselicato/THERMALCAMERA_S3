@@ -4,11 +4,11 @@
 
 import struct
 import numpy as np
+from datetime import datetime
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
 from matplotlib.widgets import CheckButtons
 from matplotlib import patches
-from datetime import datetime
 import cv2
 import paho.mqtt.client as mqtt
 
@@ -19,6 +19,7 @@ MQTT_PATH = "/singlecameras/camera1/#"
 fig, ax = plt.subplots()
 fig.set_size_inches(4,5)
 im = ax.imshow(np.random.rand(32,24)*30+10, cmap='inferno')
+fig_text = fig.figure.text(0.05, 0.05, "Waiting for thermal image...")
 # create colorbar
 cbar = plt.colorbar(im)
 cbar_ticks = np.linspace(10., 40., num=7, endpoint=True)
@@ -33,13 +34,6 @@ clicks = np.empty((0, 2), dtype=int)
 
 draw_pixel, = ax.plot([], [], marker='+', color='red', markersize=12, linestyle='None')
 draw_area, = ax.plot([], [], marker='+', color='blue', markersize=12, linestyle='None')
-
-# size = (720,960)
-# fps = 4
-# fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-# # TODO: find a way to save more than one video
-# video = cv2.VideoWriter('test.mp4', fourcc, fps, size, isColor=True)
-# filming = False
 
 received = 0    # counter for how many thermal images have been received
 
@@ -56,7 +50,12 @@ class Camera:
     def start_video(self):
         """
         Create a VideoWriter object
+
+        Parameters
+        ----------
+        none
         """
+
         now = datetime.now() # current date and time
         time = now.strftime("%H_%M_%S")
         filename = "out_video/"+time+".mp4"
@@ -65,21 +64,35 @@ class Camera:
         self.filming = True
         print(f"Filming {filename}")
 
-    def add_frame(self, data_arr):
+    def add_frame(self, fig):
         """
-        Add frame to video
+        Add frame to video if filming, else do nothing
+
+        Parameters
+        ----------
+        fig : figure
         """
-        data_arr = cv2.cvtColor(data_arr, cv2.COLOR_RGBA2BGR) # Convert to BGR (opencv's default)
-        data_arr = cv2.resize(data_arr, self.size) # resize image to video size
-        self.video.write(data_arr) # add image to video writer
+
+        if self.filming:
+            data_arr = np.asarray(fig.canvas.renderer.buffer_rgba())
+            data_arr = cv2.cvtColor(data_arr, cv2.COLOR_RGBA2BGR) # Convert to BGR (opencv's default)
+            data_arr = cv2.resize(data_arr, self.size) # resize image to video size
+            self.video.write(data_arr) # add image to video writer
+        else:
+            pass
 
     def stop_video(self):
         """
         Save output video
+
+        Parameters
+        ----------
+        none
         """
+
         self.video.release()
         self.filming = False
-        print(f"Stopped filming")
+        print(f"Stopped filming, saved output video")
 
 
 videocamera = Camera()
@@ -138,15 +151,14 @@ def on_message(client, userdata, msg):
             update_cbar(cbar, min, max)
         received += 1
 
+        fig_text.set_text(datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
         fig.canvas.draw() # draw canvas
 
-        if film_video.get_status()[0]:  # if video button on image is clicked, save frames
-            # filming = True
-            img = np.asarray(fig.canvas.renderer.buffer_rgba()) # get image from canvas as an array
-            videocamera.add_frame(img)
+        videocamera.add_frame(fig)
 
         if (not film_video.get_status()[0]) and videocamera.filming:
-            videocamera.stop_video()
+            videocamera.stop_video()    # TODO: this should be moved elsewhere, to make sure 
+                                        # video is saved even if the AtomS3 loses the connection
 
     if msg.topic == "/singlecameras/camera1/pixels/data":
         test = list(map(str, msg.payload.decode().split(',')))
@@ -259,8 +271,10 @@ client.loop_start()
 cid = fig.canvas.mpl_connect('button_press_event', on_click)
 cursor = Cursor(ax, useblit=True, color='black', linewidth=1 )
 
-select_area = CheckButtons(plt.axes([0.45, 0.9, 0.3, 0.075]), ['Select area',], [False,], check_props={'color':'red', 'linewidth':1})
-film_video = CheckButtons(plt.axes([0.1, 0.9, 0.3, 0.075]), ['Video',], [False,], check_props={'color':'green', 'linewidth':1})
+select_area = CheckButtons(plt.axes([0.45, 0.9, 0.3, 0.075]), ['Select area',],
+                           [False,], check_props={'color':'red', 'linewidth':1})
+film_video = CheckButtons(plt.axes([0.1, 0.9, 0.3, 0.075]), ['Video',], [False,],
+                          check_props={'color':'green', 'linewidth':1})
 
 def button_callback(label):
     global videocamera

@@ -1,5 +1,5 @@
 """
-    Receive data from a thermal camera MLX90640 connected to AtomS3
+    Receive data from a thermal camera MLX90640 connected to AtomS3 and display it
 """
 
 import struct
@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
 from matplotlib.widgets import CheckButtons
 from matplotlib import patches
+from datetime import datetime
 import cv2
 import paho.mqtt.client as mqtt
 
@@ -33,14 +34,55 @@ clicks = np.empty((0, 2), dtype=int)
 draw_pixel, = ax.plot([], [], marker='+', color='red', markersize=12, linestyle='None')
 draw_area, = ax.plot([], [], marker='+', color='blue', markersize=12, linestyle='None')
 
-size = (720,960)
-fps = 4
-fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-# TODO: find a way to save more than one video
-video = cv2.VideoWriter('test.mp4', fourcc, fps, size, isColor=True)
-filming = False
+# size = (720,960)
+# fps = 4
+# fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+# # TODO: find a way to save more than one video
+# video = cv2.VideoWriter('test.mp4', fourcc, fps, size, isColor=True)
+# filming = False
 
 received = 0    # counter for how many thermal images have been received
+
+class Camera:
+    """
+    Class used to save a video of the plot
+    """
+
+    def __init__(self, size=(720,960), fps=4):
+        self.filming = False
+        self.size = size
+        self.fps = fps
+
+    def start_video(self):
+        """
+        Create a VideoWriter object
+        """
+        now = datetime.now() # current date and time
+        time = now.strftime("%H_%M_%S")
+        filename = "out_video/"+time+".mp4"
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        self.video = cv2.VideoWriter(filename, fourcc, self.fps, self.size, isColor=True)
+        self.filming = True
+        print(f"Filming {filename}")
+
+    def add_frame(self, data_arr):
+        """
+        Add frame to video
+        """
+        data_arr = cv2.cvtColor(data_arr, cv2.COLOR_RGBA2BGR) # Convert to BGR (opencv's default)
+        data_arr = cv2.resize(data_arr, self.size) # resize image to video size
+        self.video.write(data_arr) # add image to video writer
+
+    def stop_video(self):
+        """
+        Save output video
+        """
+        self.video.release()
+        self.filming = False
+        print(f"Stopped filming")
+
+
+videocamera = Camera()
 
 
 def update_cbar(colorbar, min, max):
@@ -99,16 +141,12 @@ def on_message(client, userdata, msg):
         fig.canvas.draw() # draw canvas
 
         if film_video.get_status()[0]:  # if video button on image is clicked, save frames
-            filming = True
+            # filming = True
             img = np.asarray(fig.canvas.renderer.buffer_rgba()) # get image from canvas as an array
-            img = cv2.cvtColor(img, cv2.COLOR_RGBA2BGR) # Convert to BGR (opencv's default)
-            img = cv2.resize(img, size) # resize image to video size
-            video.write(img) # add image to video writer
+            videocamera.add_frame(img)
 
-        if (not film_video.get_status()[0]) and filming:
-            video.release()
-            print("Saved output video")
-            filming = False
+        if (not film_video.get_status()[0]) and videocamera.filming:
+            videocamera.stop_video()
 
     if msg.topic == "/singlecameras/camera1/pixels/data":
         test = list(map(str, msg.payload.decode().split(',')))
@@ -223,4 +261,12 @@ cursor = Cursor(ax, useblit=True, color='black', linewidth=1 )
 
 select_area = CheckButtons(plt.axes([0.45, 0.9, 0.3, 0.075]), ['Select area',], [False,], check_props={'color':'red', 'linewidth':1})
 film_video = CheckButtons(plt.axes([0.1, 0.9, 0.3, 0.075]), ['Video',], [False,], check_props={'color':'green', 'linewidth':1})
+
+def button_callback(label):
+    global videocamera
+    if not videocamera.filming:
+        videocamera.start_video()
+
+film_video.on_clicked(button_callback)
+
 plt.show()

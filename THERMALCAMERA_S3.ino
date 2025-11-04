@@ -144,19 +144,21 @@ void callback(char* topic, byte* payload, unsigned int length) {
             client.publish("/singlecameras/camera1/pixel_file","failed");
         }
 
+        // IMPORTANT: x and y must be swapped before publishing
         std::ostringstream oss;
-        for (const auto& pair : single_pixels) {
-            // oss << '(';
-            for (size_t i = 0; i < pair.size(); ++i) {
-                oss << pair[i];
-                if (i + 1 < pair.size())
-                    oss << ' ';
+        for (int i=0; i<single_pixels.size(); i++){
+            std::vector<int> pair = single_pixels[i];
+            if (pair.size() == 2){
+                oss << pair[1]<<' '<<pair[0];
             }
-            oss << ",";
+            else {
+                Serial.println("Found invalid coordinates in single_pixels vector (dimensions !=2)");
+            }
+            if (i!=single_pixels.size()-1){
+                oss << ",";}
         }
 
         std::string current = oss.str();
-        current.pop_back(); // remove last comma
         client.publish("/singlecameras/camera1/pixels/current", current.c_str(), true);
     }
 
@@ -493,15 +495,19 @@ void loop() {
 String pixel_data(std::vector<std::vector<int>> positions, float values[COLS * ROWS]){
     String out_msg;
 
+    // IMPORTANT: x and y must be swapped before publishing
     // loop on positions
     for(int i=0; i<positions.size(); i++){
         std::vector<int> pos = positions[i];
         float val = values[COLS*pos[1] + pos[0]];
-        if (i == positions.size()-1){
-            out_msg = out_msg + String(pos[0]) + " " + String(pos[1]) + " " + String(val);   }
-        else {
-        out_msg = out_msg + String(pos[0]) + " " + String(pos[1]) + " " + String(val) + ",";    }
-        
+        // if (i == positions.size()-1){
+        //     out_msg = out_msg + String(pos[1]) + " " + String(pos[0]) + " " + String(val);   }
+        // else {
+        // out_msg = out_msg + String(pos[1]) + " " + String(pos[0]) + " " + String(val) + ",";    }
+        out_msg = out_msg + String(pos[1]) + " " + String(pos[0]) + " " + String(val);
+        if (i < positions.size()-1){
+            out_msg = out_msg + ",";
+        }
     }
 
     return out_msg;

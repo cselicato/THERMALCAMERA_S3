@@ -259,7 +259,8 @@ def on_click(event):
         if [(x, y)] not in single_pixels:
             single_pixels = np.append(single_pixels, [(x, y)], axis=0)  # append pixel to array
 
-            client.publish("/singlecameras/camera1/pixels/coord", f"{x} {y}")   # publish pixel position
+            # IMPORTANT: x and y must be published as (y, x) because in the sketch they are swapped 
+            client.publish("/singlecameras/camera1/pixels/coord", f"{y} {x}")   # publish pixel position
             draw_pixel.set_data(single_pixels[:,0],single_pixels[:,1]) # draw selected pixels on image
 
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)

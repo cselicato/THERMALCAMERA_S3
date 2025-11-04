@@ -106,12 +106,14 @@ long loopTime, startTime, endTime, fps, lastUpdate;
 
 // defines what to do when a message is recieved 
 void callback(char* topic, byte* payload, unsigned int length) {
-    M5.Display.printf("recieved on topic ");
-    M5.Display.print(topic);
+    Serial.print("Recieved on topic ");
+    Serial.print(topic);
     String message="";
     for (int i=0;i<length;i++) {
       message+=(char)payload[i];
     }
+   Serial.print("Mqtt command:");
+   Serial.println(message);
 
     if(strcmp(topic, "/singlecameras/camera1/air/control") == 0){    // TODO: the python client never publishes on this topic
         if(message=="1") {
@@ -236,6 +238,7 @@ void setup() {
         delay(100);
     }
     M5.Display.printf("\nATOMS3 MLX90640 IR Camera\n");
+    Serial.println("ATOMS3 MLX90640 IR Camera"); 
     M5.Display.setTextSize(1);
 
     // Initialize MLX90640 sensor
@@ -498,9 +501,11 @@ String pixel_data(std::vector<std::vector<int>> positions, float values[COLS * R
         std::vector<int> pos = positions[i];
         float val = values[COLS*pos[1] + pos[0]];
         if (i == positions.size()-1){
-            out_msg = out_msg + String(pos[0]) + " " + String(pos[1]) + " " + String(val);   }
+            // out_msg = out_msg + String(pos[0]) + " " + String(pos[1]) + " " + String(val);   }
+            out_msg = out_msg + String(pos[1]) + " " + String(pos[0]) + " " + String(val);   }
         else {
-        out_msg = out_msg + String(pos[0]) + " " + String(pos[1]) + " " + String(val) + ",";    }
+        // out_msg = out_msg + String(pos[0]) + " " + String(pos[1]) + " " + String(val) + ",";    }
+        out_msg = out_msg + String(pos[1]) + " " + String(pos[0]) + " " + String(val) + ",";    }
         
     }
 

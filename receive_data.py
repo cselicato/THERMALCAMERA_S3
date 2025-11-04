@@ -256,6 +256,7 @@ def on_click(event):
     else:
         # if area button is not clicked get point coordinates and publish them
         # if coordinates are already present, do not append them
+        # TODO: make sure no out of bounds coordinates are published
         if [(x, y)] not in single_pixels:
             single_pixels = np.append(single_pixels, [(x, y)], axis=0)  # append pixel to array
 

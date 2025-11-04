@@ -149,7 +149,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
         for (int i=0; i<single_pixels.size(); i++){
             std::vector<int> pair = single_pixels[i];
             if (pair.size() == 2){
-                oss << pair[1]<<' '<<pair[0];
+                // oss << pair[1]<<' '<<pair[0];
+                oss << pair[0]<<' '<<pair[1];
             }
             else {
                 Serial.println("Found invalid coordinates in single_pixels vector (dimensions !=2)");
@@ -495,16 +496,13 @@ void loop() {
 String pixel_data(std::vector<std::vector<int>> positions, float values[COLS * ROWS]){
     String out_msg;
 
-    // IMPORTANT: x and y must be swapped before publishing
+    // IMPORTANT: x and y must be swapped to access correct pixel
+
     // loop on positions
     for(int i=0; i<positions.size(); i++){
         std::vector<int> pos = positions[i];
-        float val = values[COLS*pos[1] + pos[0]];
-        // if (i == positions.size()-1){
-        //     out_msg = out_msg + String(pos[1]) + " " + String(pos[0]) + " " + String(val);   }
-        // else {
-        // out_msg = out_msg + String(pos[1]) + " " + String(pos[0]) + " " + String(val) + ",";    }
-        out_msg = out_msg + String(pos[1]) + " " + String(pos[0]) + " " + String(val);
+        float val = values[COLS*pos[0] + pos[1]];
+        out_msg = out_msg + String(pos[0]) + " " + String(pos[1]) + " " + String(val);
         if (i < positions.size()-1){
             out_msg = out_msg + ",";
         }

@@ -517,20 +517,18 @@ String pixel_data(std::vector<std::vector<int>> positions, float values[COLS * R
     // IMPORTANT: x and y must be swapped to access correct pixel
 
     // loop on positions
-    if(positions.size()>0){
-        for(int i=0; i<positions.size(); i++){
-            std::vector<int> pos = positions[i];
-            if (pos[1]>COLS || pos[0]>ROWS) {
-                Serial.println("Found invalid coordinates for pixel");
-                out_msg = "Failed on "+ String(pos[0]) + " " + String(pos[1]);
-            }
+    for(int i=0; i<positions.size(); i++){
+        std::vector<int> pos = positions[i];
+        if (pos[1]>COLS || pos[0]>ROWS) {
+            Serial.println("Found invalid coordinates for pixel");
+            out_msg = "Failed on "+ String(pos[0]) + " " + String(pos[1]);
+        }
 
-            else {
-                float val = values[COLS*pos[0] + pos[1]];
-                out_msg = out_msg + String(pos[0]) + " " + String(pos[1]) + " " + String(val);
-                if (i < positions.size()-1){
-                    out_msg = out_msg + ",";
-                }
+        else {
+            float val = values[COLS*pos[0] + pos[1]];
+            out_msg = out_msg + String(pos[0]) + " " + String(pos[1]) + " " + String(val);
+            if (i < positions.size()-1){
+                out_msg = out_msg + ",";
             }
         }
     }

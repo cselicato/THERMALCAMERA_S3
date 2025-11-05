@@ -501,12 +501,9 @@ String pixel_data(std::vector<std::vector<int>> positions, float values[COLS * R
         std::vector<int> pos = positions[i];
         float val = values[COLS*pos[1] + pos[0]];
         if (i == positions.size()-1){
-            // out_msg = out_msg + String(pos[0]) + " " + String(pos[1]) + " " + String(val);   }
-            out_msg = out_msg + String(pos[1]) + " " + String(pos[0]) + " " + String(val);   }
+            out_msg = out_msg + String(pos[0]) + " " + String(pos[1]) + " " + String(val);   }
         else {
-        // out_msg = out_msg + String(pos[0]) + " " + String(pos[1]) + " " + String(val) + ",";    }
-        out_msg = out_msg + String(pos[1]) + " " + String(pos[0]) + " " + String(val) + ",";    }
-        
+            out_msg = out_msg + String(pos[0]) + " " + String(pos[1]) + " " + String(val) + ",";    }
     }
 
     return out_msg;

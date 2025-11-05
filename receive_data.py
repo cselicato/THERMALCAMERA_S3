@@ -22,10 +22,8 @@ MQTT_PATH = "/singlecameras/camera1/#"
 
 # Initialize a list of float as per your data. Below is a random example
 fig, ax = plt.subplots()
-# fig.set_size_inches(4,5)
+fig.set_size_inches(4,5)
 im = ax.imshow(np.random.rand(32,24)*30+10, cmap='inferno')
-fig.set_size_inches(5,4)
-# im = ax.imshow(np.random.rand(24,32)*30+10, cmap='inferno')
 
 fig_text = fig.figure.text(0.05, 0.05, "Waiting for thermal image...")
 # create colorbar
@@ -33,10 +31,6 @@ cbar = plt.colorbar(im)
 cbar_ticks = np.linspace(10., 40., num=7, endpoint=True)
 cbar.set_ticks(cbar_ticks)
 cbar.minorticks_on()
-
-# arrays for the coordinates of the interesting pixels and the area
-# single_pixels = np.empty((0, 2), dtype=int)
-# area = np.empty((0, 4))
 
 clicks = np.empty((0, 2), dtype=int)
 
@@ -46,7 +40,6 @@ draw_clicks, = ax.plot([], [], marker='+', color='blue', markersize=12, linestyl
 received = 0    # counter for how many thermal images have been received
 
 video = VideoMaker()
-
 
 area = InterestingArea()
 single_pixels = InterestingPixels()
@@ -72,19 +65,6 @@ def update_cbar(colorbar, min, max):
     cbar_ticks = np.linspace(lower, upper, num=10, endpoint=True,)
     colorbar.set_ticks(cbar_ticks)
 
-def cleanup_pixels(vector, scatter):
-    """
-    Recreate vector with shape (0,4) and delete patches from figure
-
-    Parameters
-    ----------
-    vector : np.array with shape (x, 2)
-    scatter : Line2D
-    """
-
-    scatter.set_data([], [])
-    vector = np.empty((0, 2), dtype=int)
-
 
 def on_connect(client, userdata, flags, reason_code, properties):
     """
@@ -107,12 +87,6 @@ def on_message(client, userdata, msg):
         flo_arr = [struct.unpack('f', msg.payload[i:i+4])[0] for i in range(0, len(msg.payload), 4)]
         # data must be transposed to match what is shown on AtomS3 display
         thermal_img = np.array(flo_arr).reshape(24,32).T
-
-
-        # thermal_img = np.array(flo_arr).reshape(24,32)
-        # thermal_img = np.flip(thermal_img, axis=1)
-        # thermal_img = np.fliplr(thermal_img)
-        # thermal_img = thermal_img.T
         im.set_data(thermal_img)
 
         if received%10 == 0:
@@ -193,8 +167,7 @@ def on_click(event):
         # if area button is not clicked get point coordinates and publish them
         # if coordinates are already present, do not append them nor publish
         if single_pixels.get_from_click(x, y):
-            # client.publish("/singlecameras/camera1/pixels/coord", f"{x} {y}")   # publish pixel position
-            client.publish("/singlecameras/camera1/pixels/coord", f"{y} {x}")   # publish pixel position
+            client.publish("/singlecameras/camera1/pixels/coord", f"{x} {y}")   # publish pixel position
             single_pixels.draw_on(draw_pixel)
 
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)

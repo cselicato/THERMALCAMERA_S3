@@ -4,21 +4,27 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.widgets import CheckButtons
 from datetime import datetime
 import paho.mqtt.client as mqtt
 
+from THERMALCAMERA_S3.videomaker import VideoMaker
+
 MQTT_SERVER = "test.mosquitto.org"
 MQTT_PATH = "/singlecameras/camera1/pixels/data"
+
+video = VideoMaker("pixel", size=(960, 720))
 
 xdata, ydata = [], []
 start_time = datetime.now()
 
 fig, ax = plt.subplots()
+fig.set_size_inches(5, 4)
 scatter, = ax.plot([], [], color='red', markersize=12)
 ax.set_xlabel("Time from start [s]")
-ax.set_ylabel("Received")
+ax.set_ylabel("T [°C]")
 ax.set_xlim(0, 10)
-ax.set_ylim(0, 40)
+ax.set_ylim(20, 30)
 ax.grid()
 fig_text = fig.figure.text(0.75, 0.9, "Waiting for data...")
 
@@ -63,6 +69,8 @@ def on_message(client, userdata, msg):
         ax.set_ylim(new_min, new_max)
 
     ax.figure.canvas.draw()
+    video.add_frame(fig)
+
 
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 client.on_connect = on_connect
@@ -70,5 +78,21 @@ client.on_message = on_message
 client.connect(MQTT_SERVER, 1883, 60)
 
 client.loop_start()
+
+video_button = CheckButtons(plt.axes([0.1, 0.9, 0.3, 0.075]), ['Video',], [False,],
+                          check_props={'color':'green', 'linewidth':1})
+
+def video_button_cb(label):
+
+    global video
+    if not video.filming:
+        # when checkbox is clicked and previously the video was not being saved,
+        # start video
+        video.start_video()
+    else:
+        # if video was being taken, stop and save the file
+        video.stop_video()
+
+video_button.on_clicked(video_button_cb)
 
 plt.show(block=True)

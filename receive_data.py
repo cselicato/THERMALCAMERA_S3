@@ -8,8 +8,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
 from matplotlib.widgets import CheckButtons
-from matplotlib import patches
-import cv2
 import paho.mqtt.client as mqtt
 
 from THERMALCAMERA_S3.videomaker import VideoMaker
@@ -39,7 +37,7 @@ draw_clicks, = ax.plot([], [], marker='+', color='blue', markersize=12, linestyl
 
 received = 0    # counter for how many thermal images have been received
 
-video = VideoMaker()
+video = VideoMaker("display")
 
 area = InterestingArea()
 single_pixels = InterestingPixels()

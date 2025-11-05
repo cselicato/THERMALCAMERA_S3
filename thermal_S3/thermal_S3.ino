@@ -134,33 +134,39 @@ void callback(char* topic, byte* payload, unsigned int length) {
             single_pixel[i] = f;
             coord.push_back(f);
         }
-        single_pixels.push_back(coord);
-
-        // add pixel to file
-        File dataFile = SPIFFS.open(pixel_fname,"a");
-        if (dataFile) {
-            dataFile.printf("%d %d\n", coord.at(0), coord.at(1));
-            dataFile.close();
-            client.publish("/singlecameras/camera1/pixel_file","success");
-        } else {
-            client.publish("/singlecameras/camera1/pixel_file","failed");
+        // check if values are valid and do stuff only if they are
+        if (coord.at(0)>=ROWS || coord.at(1)>=COLS){
+            Serial.println("Received coordinates are invalid :(");
         }
+        else {        
+            single_pixels.push_back(coord);
 
-        std::ostringstream oss;
-        for (int i=0; i<single_pixels.size(); i++){
-            std::vector<int> pair = single_pixels[i];
-            if (pair.size() == 2){
-                oss << pair[0]<<' '<<pair[1];
+            // add pixel to file
+            File dataFile = SPIFFS.open(pixel_fname,"a");
+            if (dataFile) {
+                dataFile.printf("%d %d\n", coord.at(0), coord.at(1));
+                dataFile.close();
+                client.publish("/singlecameras/camera1/pixel_file","success");
+            } else {
+                client.publish("/singlecameras/camera1/pixel_file","failed");
             }
-            else {
-                Serial.println("Found invalid coordinates in single_pixels vector (dimensions !=2)");
+
+            std::ostringstream oss;
+            for (int i=0; i<single_pixels.size(); i++){
+                std::vector<int> pair = single_pixels[i];
+                if (pair.size() == 2){
+                    oss << pair[0]<<' '<<pair[1];
+                }
+                else {
+                    Serial.println("Found invalid coordinates in single_pixels vector (dimensions !=2) :(");
+                }
+                if (i!=single_pixels.size()-1){
+                    oss << ",";}
             }
-            if (i!=single_pixels.size()-1){
-                oss << ",";}
+
+            std::string current = oss.str();
+            client.publish("/singlecameras/camera1/pixels/current", current.c_str(), true);
         }
-
-        std::string current = oss.str();
-        client.publish("/singlecameras/camera1/pixels/current", current.c_str(), true);
     }
 
     else if(strcmp(topic, "/singlecameras/camera1/pixels/reset") == 0){
@@ -170,25 +176,38 @@ void callback(char* topic, byte* payload, unsigned int length) {
     else if(strcmp(topic, "/singlecameras/camera1/area") == 0){  // get information about the area
         // first two numbers are coord. of the lower left point
         // last two are width and height
+
+        // put received info in a temporary container
+        int rc[4];
         std::stringstream ss = std::stringstream(message.c_str());
         int f;
-        area.clear();
         for (int i=0; i<4;i++){
             ss >> f;
-            area.push_back(f);
+            rc[i] = f;
         }
+        // check if values are valid
+        bool invalid = rc[0]>=ROWS || rc[1]>=COLS || rc[0]+rc[2]>ROWS || rc[1]+rc[3]>COLS;
+        if (invalid){ // values are invalid
+            Serial.println("Received area is invalid :(");
+            Serial.println("If area was defined before, still sending its data");
+        }
+        else { // values are valid: define new area and do stuff
+            area.clear();
+            for (int i=0; i<4;i++){
+                area.push_back(rc[i]);
+            }
+            // publish current area as persistent message
+            client.publish("/singlecameras/camera1/area/current", message.c_str(), true);
+            // write area to file (previous one must be overwritten)
+            File currentArea = SPIFFS.open(area_fname,"w");
+            if (currentArea) {
+                currentArea.printf("%d\n%d\n%d\n%d\n", area[0], area[1], area[2], area[3]);
 
-        // publish current area as persistent message
-        client.publish("/singlecameras/camera1/area/current", message.c_str(), true);
-        // write area to file (previous one must be overwritten)
-        File currentArea = SPIFFS.open(area_fname,"w");
-        if (currentArea) {
-            currentArea.printf("%d\n%d\n%d\n%d\n", area[0], area[1], area[2], area[3]);
-
-            currentArea.close();
-            client.publish("/singlecameras/camera1/area_file","success");
-        } else {
-            client.publish("/singlecameras/camera1/area_file","failed");
+                currentArea.close();
+                client.publish("/singlecameras/camera1/area_file","success");
+            } else {
+                client.publish("/singlecameras/camera1/area_file","failed");
+            }
         }
     }
 

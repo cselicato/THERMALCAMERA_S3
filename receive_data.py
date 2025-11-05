@@ -103,9 +103,7 @@ def on_message(client, userdata, msg):
         video.add_frame(fig)
 
     if msg.topic == "/singlecameras/camera1/pixels/data":
-        test = list(map(str, msg.payload.decode().split(',')))
         print("Recieved: ", msg.payload.decode())
-        print("Lenght: ", len(test))
 
     if msg.topic == "/singlecameras/camera1/pixels/current":
         # get pixels the camera is already looking at
@@ -136,8 +134,8 @@ def on_click(event):
         return
 
     # get coordinates of the mouse click
-    x = np.floor(event.xdata).astype(int)
-    y = np.floor(event.ydata).astype(int)
+    x = np.round(event.xdata).astype(int)
+    y = np.round(event.ydata).astype(int)
 
     if area_button.get_status()[0]:
         # if area button is clicked define area (two clicks are needed)

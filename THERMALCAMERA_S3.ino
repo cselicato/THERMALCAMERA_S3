@@ -144,19 +144,22 @@ void callback(char* topic, byte* payload, unsigned int length) {
             client.publish("/singlecameras/camera1/pixel_file","failed");
         }
 
+        // IMPORTANT: x and y must be swapped before publishing
         std::ostringstream oss;
-        for (const auto& pair : single_pixels) {
-            // oss << '(';
-            for (size_t i = 0; i < pair.size(); ++i) {
-                oss << pair[i];
-                if (i + 1 < pair.size())
-                    oss << ' ';
+        for (int i=0; i<single_pixels.size(); i++){
+            std::vector<int> pair = single_pixels[i];
+            if (pair.size() == 2){
+                // oss << pair[1]<<' '<<pair[0];
+                oss << pair[0]<<' '<<pair[1];
             }
-            oss << ",";
+            else {
+                Serial.println("Found invalid coordinates in single_pixels vector (dimensions !=2)");
+            }
+            if (i!=single_pixels.size()-1){
+                oss << ",";}
         }
 
         std::string current = oss.str();
-        current.pop_back(); // remove last comma
         client.publish("/singlecameras/camera1/pixels/current", current.c_str(), true);
     }
 
@@ -486,22 +489,28 @@ void loop() {
     if(area.size() == 4){    // if area is not defined there is nothing to publish
         client.publish("/singlecameras/camera1/area/data", area_data(area,pixels).c_str());
     }
-    
 
 }
 
 String pixel_data(std::vector<std::vector<int>> positions, float values[COLS * ROWS]){
     String out_msg;
 
+    // IMPORTANT: x and y must be swapped to access correct pixel
+
     // loop on positions
-    for(int i=0; i<positions.size(); i++){
-        std::vector<int> pos = positions[i];
-        float val = values[COLS*pos[1] + pos[0]];
-        if (i == positions.size()-1){
-            out_msg = out_msg + String(pos[0]) + " " + String(pos[1]) + " " + String(val);   }
-        else {
-        out_msg = out_msg + String(pos[0]) + " " + String(pos[1]) + " " + String(val) + ",";    }
-        
+    if(positions.size()>0){
+        for(int i=0; i<positions.size(); i++){
+            std::vector<int> pos = positions[i];
+            if (pos[1]>COLS || pos[0]>ROWS) {
+                Serial.println("Found invalid coordinates for pixel");
+                out_msg = "Failed on "+ String(pos[0]) + " " + String(pos[1]);
+            }
+            float val = values[COLS*pos[0] + pos[1]];
+            out_msg = out_msg + String(pos[0]) + " " + String(pos[1]) + " " + String(val);
+            if (i < positions.size()-1){
+                out_msg = out_msg + ",";
+            }
+        }
     }
 
     return out_msg;
@@ -509,26 +518,35 @@ String pixel_data(std::vector<std::vector<int>> positions, float values[COLS * R
 
 String area_data(std::vector<int> a, float values[COLS * ROWS]){
     String out_msg;
-    int x = a[0];
-    int y = a[1];
-    int w = a[2];
-    int h = a[3];
-
+    int y = a[0];
+    int x = a[1];
+    int h = a[2];
+    int w = a[3];
     // add data of the interesting area to a vector
     std::vector<float> temps;
-    for(int i=x; i<x+w;i++){
-        for(int j=y; j<y+h;j++){
-            temps.push_back(values[j*COLS + i]);
+    if (a[1]>COLS || a[0]>ROWS) {   // TODO: make sure width and height are consistent
+        Serial.println("Found invalid coordinates for area");
+        String out_msg = "Failed on "+ String(a[0]) + " " + String(a[1]);
+    }
+    else {
+        for(int i=x; i<x+w;i++){
+            for(int j=y; j<y+h;j++){
+                temps.push_back(values[j*COLS + i]);
+            }
         }
+        float max = *std::max_element(temps.begin(), temps.end());
+        float min = *std::min_element(temps.begin(), temps.end());
+        float avg = 0.;
+        for(float f : temps){
+            avg += f;
+        }
+        avg = avg/temps.size();
+        x = a[0];
+        y = a[1];
+        w = a[2];
+        h = a[3];
+        out_msg = " max: "+String(max)+" min: "+String(min)+" avg: "+String(avg)+" x: "+String(x)+" y: "+String(y)+" w: "+String(w)+" h: "+String(h);
     }
-    float max = *std::max_element(temps.begin(), temps.end());
-    float min = *std::min_element(temps.begin(), temps.end());
-    float avg = 0.;
-    for(float f : temps){
-        avg += f;
-    }
-    avg = avg/temps.size();
-    out_msg = " max: "+String(max)+" min: "+String(min)+" avg: "+String(avg)+" x: "+String(x)+" y: "+String(y)+" w: "+String(w)+" h: "+String(h);
 
     return out_msg;
 }

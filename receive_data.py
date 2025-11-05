@@ -256,9 +256,11 @@ def on_click(event):
     else:
         # if area button is not clicked get point coordinates and publish them
         # if coordinates are already present, do not append them
+        # TODO: make sure no out of bounds coordinates are published
         if [(x, y)] not in single_pixels:
             single_pixels = np.append(single_pixels, [(x, y)], axis=0)  # append pixel to array
 
+            # IMPORTANT: x and y in the sketch they are swapped 
             client.publish("/singlecameras/camera1/pixels/coord", f"{x} {y}")   # publish pixel position
             draw_pixel.set_data(single_pixels[:,0],single_pixels[:,1]) # draw selected pixels on image
 

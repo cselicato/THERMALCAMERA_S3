@@ -146,12 +146,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
             client.publish("/singlecameras/camera1/pixel_file","failed");
         }
 
-        // IMPORTANT: x and y must be swapped before publishing
         std::ostringstream oss;
         for (int i=0; i<single_pixels.size(); i++){
             std::vector<int> pair = single_pixels[i];
             if (pair.size() == 2){
-                // oss << pair[1]<<' '<<pair[0];
                 oss << pair[0]<<' '<<pair[1];
             }
             else {
@@ -186,7 +184,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
         File currentArea = SPIFFS.open(area_fname,"w");
         if (currentArea) {
             currentArea.printf("%d\n%d\n%d\n%d\n", area[0], area[1], area[2], area[3]);
-            // currentArea.printf("%d,%d,%d,%d\n", area[0], area[1], area[2], area[3]);
 
             currentArea.close();
             client.publish("/singlecameras/camera1/area_file","success");
@@ -552,6 +549,7 @@ String area_data(std::vector<int> a, float values[COLS * ROWS]){
         w = a[2];
         h = a[3];
         out_msg = " max: "+String(max)+" min: "+String(min)+" avg: "+String(avg)+" x: "+String(x)+" y: "+String(y)+" w: "+String(w)+" h: "+String(h);
+        Serial.printf("Number of pixels in area: %i ",w*h);
     }
 
     return out_msg;

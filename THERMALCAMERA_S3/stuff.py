@@ -2,6 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import patches
 
+MIN_X = 0
+MAX_X = 23
+MIN_Y = 0
+MAX_Y = 31
 
 class InterestingPixels:
     """
@@ -25,19 +29,19 @@ class InterestingPixels:
         self.p = np.empty((0, 2), dtype=int)
 
     def draw_on(self, scatter):
-        # draw selected pixels on image
+        """
+        Add selected pixels to scatter plot
+        """
         scatter.set_data(self.p[:,0],self.p[:,1])
 
-    def get_from_str(self, msg, scatter):
+    def get_from_str(self, msg):
         """
-        If not none, get area definition from MQTT message as x_left, y_low, width, height
+        If not none, get current pixels
 
         Parameters
         ----------
         msg : str
                 received MQTT message as a string
-        scatter : Line2D
-                    scatter plot to plot selected pixels
         """
 
         current = list(map(str, msg.split(',')))
@@ -46,7 +50,7 @@ class InterestingPixels:
             coord = list(map(int, pixel.split(' ')))
             # there is no need to check if coord. are already present, if they
             # were they would not have been published
-            self.p = np.append(self.p, [[coord[1], coord[0]]], axis=0)
+            self.p = np.append(self.p, [[coord[0], coord[1]]], axis=0)
 
     def handle_mqtt(self, msg, scatter):
         """
@@ -60,19 +64,53 @@ class InterestingPixels:
 
         if msg == "none":
             self.cleanup(scatter)
+            print("Not looking at anything")
         else:
-            self.get_from_str(msg, scatter)
+            self.get_from_str(msg)
 
     def get_from_click(self, x, y):
         """
         if coordinates are already present, do not append them
+        Also makes sure they are within correct bounds
+
+        Parameters
+        ----------
+        x : int
+        y : int
+
+        Returns
+        -------
+        bool
+            true if pixel has been addes
         """
+
+        if x>MAX_X: 
+            x = MAX_X
+        elif x<MIN_X:
+            x = MIN_X
+        if y>MAX_Y: 
+            y = MAX_Y
+        elif y<MIN_Y:
+            y = MIN_Y
 
         if [(x, y)] not in self.p:
             self.p = np.append(self.p, [(x, y)], axis=0)  # append pixel to array
             return True
         else:
             return False
+        
+    def new_pixel(self):
+        """
+        Implemented to make publishing new pixel easier
+
+        Returns
+        -------
+        string
+            last pixel coordinates formatted as "x y"
+
+        """
+
+        return f"{self.p[-1][0]} {self.p[-1][1]}"
 
 
 
@@ -108,7 +146,7 @@ class InterestingArea:
         """
         if self.a.shape[0]>0:
             x_left, y_low, w, h = self.a[0][:]; #, self.a[0][1], self.a[0][2], self.a[0][3]
-            rect = patches.Rectangle((x_left, y_low), w, h, linewidth=1, edgecolor='b', facecolor='none')
+            rect = patches.Rectangle((x_left-0.5, y_low-0.5), w, h, linewidth=1, edgecolor='b', facecolor='none')
             ax.add_patch(rect)
 
     def get_from_str(self, msg):
@@ -139,7 +177,31 @@ class InterestingArea:
     def get_from_click(self, c):
         x_left = int(np.min(c, axis=0)[0])
         y_low = int(np.min(c, axis=0)[1])
-        w = int(abs(c[0][0] - c[1][0]))
-        h = int(abs(c[0][1] - c[1][1]))
+        w = int(abs(c[0][0] - c[1][0]))+1
+        h = int(abs(c[0][1] - c[1][1]))+1
+
+        # sanity checks
+        if x_left>MAX_X: 
+            x_left = MAX_X
+        elif x_left<MIN_X:
+            x_left = MIN_X
+        if y_low>MAX_Y: 
+            y_low = MAX_Y
+        elif y_low<MIN_Y:
+            y_low = MIN_Y
+
+        if x_left+w>MAX_X+1: 
+            w = MAX_X+1-x_left
+        if y_low+h>MAX_Y+1: 
+            h = MAX_Y+1-y_low
+        
         self.a = np.append(self.a, [(x_left, y_low, w, h)], axis=0)
-        print(f"from clicks i got {self.a}")
+
+    def __str__(self):
+        """
+        Implemented to make publishing easier: it has to be formatted as
+        "x_left y_low w h"
+        """
+
+        return f"{self.a[0][0]} {self.a[0][1]} {self.a[0][2]} {self.a[0][3]}" # fa un po' schifo così
+    

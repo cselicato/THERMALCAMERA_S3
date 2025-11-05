@@ -109,6 +109,7 @@ def on_message(client, userdata, msg):
 
     if msg.topic == "/singlecameras/camera1/pixels/current":
         # get pixels the camera is already looking at
+        print("Current: ",msg.payload.decode())
         single_pixels.handle_mqtt(msg.payload.decode(), draw_pixel)
         single_pixels.draw_on(draw_pixel)
 
@@ -151,23 +152,17 @@ def on_click(event):
 
         if clicks.shape[0] == 2:
             area.cleanup(ax) # remove drawing of previous area and delete previous one
+            area.get_from_click(clicks)    # get defined area
             # publish the selected area
-            x_left = int(np.min(clicks, axis=0)[0])
-            y_low = int(np.min(clicks, axis=0)[1])
-            w = int(abs(clicks[0][0] - clicks[1][0]))
-            h = int(abs(clicks[0][1] - clicks[1][1]))
-            
-            client.publish("/singlecameras/camera1/area", f"{x_left} {y_low} {w} {h}")
-            print(f"The selected area is x,y = ({x_left} {y_low}), w = {w}, h = {h}")
-
-            area.get_from_click(clicks)
+            client.publish("/singlecameras/camera1/area", str(area))
             area.draw_on(ax) # draw current area
+            print("The selected area is ",str(area))
 
     else:
         # if area button is not clicked get point coordinates and publish them
         # if coordinates are already present, do not append them nor publish
         if single_pixels.get_from_click(x, y):
-            client.publish("/singlecameras/camera1/pixels/coord", f"{x} {y}")   # publish pixel position
+            client.publish("/singlecameras/camera1/pixels/coord", single_pixels.new_pixel())   # publish pixel position
             single_pixels.draw_on(draw_pixel)
 
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)

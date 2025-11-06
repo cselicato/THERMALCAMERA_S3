@@ -11,7 +11,7 @@ import paho.mqtt.client as mqtt
 from THERMALCAMERA_S3.videomaker import VideoMaker
 
 MQTT_SERVER = "test.mosquitto.org"
-MQTT_PATH = "/singlecameras/camera1/pixels/data"
+MQTT_PATH = "/singlecameras/camera1/pixels/#"
 
 video = VideoMaker("pixel", size=(960, 720))
 
@@ -33,43 +33,49 @@ def on_connect(client, userdata, flags, reason_code, properties):
     client.subscribe(MQTT_PATH)
 
 def on_message(client, userdata, msg):
-    # Data is received as: 2 25 30.77,19 18 23.87,11 9 23.22
-    rc = list(map(str, msg.payload.decode().split(',')))
-    # print(rc)
 
-    current = np.empty((0, 3))
-    for i, pixel in enumerate(rc):
-        info = np.array(list(map(float, pixel.split(' '))))
-        # print(info)
-        current = np.append(current, [info], axis=0)
+    if msg.topic == "/singlecameras/camera1/pixels/current":
+        if msg.payload.decode() == "none":
+            print("Currently no pixels are defined.\n")
 
-    # print(current)
-    fig_text.set_text(f"Showing {int(current[0][0])}, {int(current[0][1])}")
-    value = current[0][2]
+    if msg.topic == "/singlecameras/camera1/pixels/data":
+        # Data is received as: 2 25 30.77,19 18 23.87,11 9 23.22
+        rc = list(map(str, msg.payload.decode().split(',')))
+        # print(rc)
 
-    x = (datetime.now() - start_time).total_seconds()
-    xdata.append(x)
-    ydata.append(value)
+        current = np.empty((0, 3))
+        for i, pixel in enumerate(rc):
+            info = np.array(list(map(float, pixel.split(' '))))
+            # print(info)
+            current = np.append(current, [info], axis=0)
 
-    # plot has to be updated in the callback (so when data is received)
-    scatter.set_data(xdata, ydata)
+        # print(current)
+        fig_text.set_text(f"Showing {int(current[0][0])}, {int(current[0][1])}")
+        value = current[0][2]
 
-    if x >= ax.get_xlim()[1]:
-        ax.set_xlim(0, x + 10)
+        x = (datetime.now() - start_time).total_seconds()
+        xdata.append(x)
+        ydata.append(value)
 
-    ymin, ymax = ax.get_ylim()
-    new_min = min(ydata)
-    new_max = max(ydata)
+        # plot has to be updated in the callback (so when data is received)
+        scatter.set_data(xdata, ydata)
 
-    pad = 0.1 * (new_max - new_min if new_max != new_min else 1)
-    new_min -= pad
-    new_max += pad
+        if x >= ax.get_xlim()[1]:
+            ax.set_xlim(0, x + 10)
 
-    if new_min < ymin or new_max > ymax:
-        ax.set_ylim(new_min, new_max)
+        ymin, ymax = ax.get_ylim()
+        new_min = min(ydata)
+        new_max = max(ydata)
 
-    ax.figure.canvas.draw()
-    video.add_frame(fig)
+        pad = 0.1 * (new_max - new_min if new_max != new_min else 1)
+        new_min -= pad
+        new_max += pad
+
+        if new_min < ymin or new_max > ymax:
+            ax.set_ylim(new_min, new_max)
+
+        ax.figure.canvas.draw()
+        video.add_frame(fig)
 
 
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)

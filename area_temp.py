@@ -12,7 +12,7 @@ import re
 from THERMALCAMERA_S3.videomaker import VideoMaker
 
 MQTT_SERVER = "test.mosquitto.org"
-MQTT_PATH = "/singlecameras/camera1/area/data"
+MQTT_PATH = "/singlecameras/camera1/area/#"
 
 video = VideoMaker("area", size=(960, 720))
 
@@ -39,45 +39,51 @@ def on_connect(client, userdata, flags, reason_code, properties):
     client.subscribe(MQTT_PATH)
 
 def on_message(client, userdata, msg):
-    # Data is received as:  max: 31.81 min: 26.04 avg: 29.74 x: 0 y: 14 w: 5 h: 5
-    rc = list(map(str, msg.payload.decode().split(',')))
-    # print(rc)
-    st = msg.payload.decode()
-    pattern = r"(\w+):\s*([\d.]+)"
-    matches = re.findall(pattern, st)
 
-    # Convert to dictionary, converting numbers to float or int automatically
-    data = {k: float(v) if '.' in v else int(v) for k, v in matches}
+    if msg.topic == "/singlecameras/camera1/area/current":
+        if msg.payload.decode() == "none":
+            print("Currently no area is defined.\n")
 
-    fig_text.set_text(f"Showing ({int(data.get("x"))}, {int(data.get("y"))}), w={int(data.get("w"))} h={int(data.get("h"))}")
+    if msg.topic == "/singlecameras/camera1/area/data":
+        # Data is received as:  max: 31.81 min: 26.04 avg: 29.74 x: 0 y: 14 w: 5 h: 5
+        rc = list(map(str, msg.payload.decode().split(',')))
+        # print(rc)
+        st = msg.payload.decode()
+        pattern = r"(\w+):\s*([\d.]+)"
+        matches = re.findall(pattern, st)
 
-    x = (datetime.now() - start_time).total_seconds()
-    t.append(x)
-    avg_T.append(data.get("avg"))
-    min_T.append(data.get("min"))
-    max_T.append(data.get("max"))
+        # Convert to dictionary, converting numbers to float or int automatically
+        data = {k: float(v) if '.' in v else int(v) for k, v in matches}
 
-    # plot has to be updated in the callback (so when data is received)
-    sc_avg.set_data(t, avg_T)
-    sc_min.set_data(t, min_T)
-    sc_max.set_data(t, max_T)
+        fig_text.set_text(f"Showing ({int(data.get("x"))}, {int(data.get("y"))}), w={int(data.get("w"))} h={int(data.get("h"))}")
 
-    if x >= ax.get_xlim()[1]:
-        ax.set_xlim(0, x + 10)
+        x = (datetime.now() - start_time).total_seconds()
+        t.append(x)
+        avg_T.append(data.get("avg"))
+        min_T.append(data.get("min"))
+        max_T.append(data.get("max"))
 
-    ymin, ymax = ax.get_ylim()
-    new_min = min(min(avg_T), min(min_T), min(max_T))
-    new_max = max(max(avg_T), max(min_T), max(max_T))
+        # plot has to be updated in the callback (so when data is received)
+        sc_avg.set_data(t, avg_T)
+        sc_min.set_data(t, min_T)
+        sc_max.set_data(t, max_T)
 
-    pad = 0.1 * (new_max - new_min if new_max != new_min else 1)
-    new_min -= pad
-    new_max += pad
+        if x >= ax.get_xlim()[1]:
+            ax.set_xlim(0, x + 10)
 
-    if new_min < ymin or new_max > ymax:
-        ax.set_ylim(new_min, new_max)
+        ymin, ymax = ax.get_ylim()
+        new_min = min(min(avg_T), min(min_T), min(max_T))
+        new_max = max(max(avg_T), max(min_T), max(max_T))
 
-    ax.figure.canvas.draw()
-    video.add_frame(fig)
+        pad = 0.1 * (new_max - new_min if new_max != new_min else 1)
+        new_min -= pad
+        new_max += pad
+
+        if new_min < ymin or new_max > ymax:
+            ax.set_ylim(new_min, new_max)
+
+        ax.figure.canvas.draw()
+        video.add_frame(fig)
 
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 client.on_connect = on_connect

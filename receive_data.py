@@ -42,7 +42,7 @@ video = VideoMaker("display")
 area = InterestingArea()
 single_pixels = InterestingPixels()
 
-def update_cbar(colorbar, min, max):
+def update_cbar(colorbar, min_temp, max_temp):
     """
     Update limits of the plotted colorbar
 
@@ -52,16 +52,16 @@ def update_cbar(colorbar, min, max):
     Parameters
     ----------
     cbar : plt.colorbar
-    min : float
-    max : float 
+    min_T : float
+    max_T : float 
     """
 
-    upper = np.ceil(max + (max - min)*0.1)
-    lower = np.floor(min - (max - min)*0.1)
+    upper = np.ceil(max_temp + (max_temp - min_temp)*0.1)
+    lower = np.floor(min_temp - (max_temp - min_temp)*0.1)
 
     colorbar.mappable.set_clim(vmin=lower,vmax=upper)
-    cbar_ticks = np.linspace(lower, upper, num=10, endpoint=True,)
-    colorbar.set_ticks(cbar_ticks)
+    ticks = np.linspace(lower, upper, num=10, endpoint=True,)
+    colorbar.set_ticks(ticks)
 
 
 def on_connect(client, userdata, flags, reason_code, properties):
@@ -77,6 +77,10 @@ def on_connect(client, userdata, flags, reason_code, properties):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
+    """
+    Define what happens when a MQTT message is received
+    """
+
     global im, single_pixels, area, received
 
     # an image is recieved from the sensor: plot the image and, if video
@@ -88,11 +92,11 @@ def on_message(client, userdata, msg):
         im.set_data(thermal_img)
 
         if received%10 == 0:
-            # get min and max of the measured temperatures
+            # update colorbar according to min and max of the measured temperatures
             min = np.min(thermal_img)
             max = np.max(thermal_img)
 
-            update_cbar(cbar, min, max)
+            update_cbar(cbar, np.min(thermal_img), np.max(thermal_img))
         received += 1
 
         fig_text.set_text(datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
@@ -111,7 +115,7 @@ def on_message(client, userdata, msg):
 
     if msg.topic == "/singlecameras/camera1/area/data":
         print("Area data: ", msg.payload.decode())
-   
+
     if msg.topic == "/singlecameras/camera1/area/current":
         # get area the camera is already looking at
         area.handle_mqtt(msg.payload.decode(),ax)
@@ -158,7 +162,8 @@ def on_click(event):
         # if area button is not clicked get point coordinates and publish them
         # if coordinates are already present, do not append them nor publish
         if single_pixels.get_from_click(x, y):
-            client.publish("/singlecameras/camera1/pixels/coord", single_pixels.new_pixel())   # publish pixel position
+            # publish pixel position
+            client.publish("/singlecameras/camera1/pixels/coord", single_pixels.new_pixel())
             single_pixels.draw_on(draw_pixel)
 
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)

@@ -2,12 +2,11 @@
     Test to plot the received area temperature
 """
 
-import numpy as np
+from datetime import datetime
+import re
 import matplotlib.pyplot as plt
 from matplotlib.widgets import CheckButtons
-from datetime import datetime
 import paho.mqtt.client as mqtt
-import re
 
 from THERMALCAMERA_S3.videomaker import VideoMaker
 
@@ -35,10 +34,22 @@ ax.legend()
 fig_text = fig.figure.text(0.55, 0.9, "Waiting for data...")
 
 def on_connect(client, userdata, flags, reason_code, properties):
+    """
+    Subsciribe to desired topic(s)
+
+    Subscribing in on_connect() means that if we lose the connection and
+    reconnect then subscriptions will be renewed.
+    """
+
     print("Connected with result code:", reason_code)
     client.subscribe(MQTT_PATH)
 
 def on_message(client, userdata, msg):
+    """
+    Define what happens when a MQTT message is received: if the topic is the area data
+    it adds it to the plot, if it receives a message thet no area is currently
+    defined it prints a message
+    """
 
     if msg.topic == "/singlecameras/camera1/area/current":
         if msg.payload.decode() == "none":
@@ -72,8 +83,8 @@ def on_message(client, userdata, msg):
             ax.set_xlim(0, x + 10)
 
         ymin, ymax = ax.get_ylim()
-        new_min = min(min(avg_T), min(min_T), min(max_T))
-        new_max = max(max(avg_T), max(min_T), max(max_T))
+        new_min = min(*avg_T, *min_T, *max_T)
+        new_max = max(*avg_T, *min_T, *max_T)
 
         pad = 0.1 * (new_max - new_min if new_max != new_min else 1)
         new_min -= pad
@@ -96,6 +107,9 @@ video_button = CheckButtons(plt.axes([0.1, 0.9, 0.3, 0.075]), ['Video',], [False
                           check_props={'color':'green', 'linewidth':1})
 
 def video_button_cb(label):
+    """
+    Relate check button state to start/stop of video  
+    """
 
     global video
     if not video.filming:

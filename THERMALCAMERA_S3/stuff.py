@@ -50,7 +50,7 @@ class InterestingPixels:
             coord = list(map(int, pixel.split(' ')))
             # there is no need to check if coord. are already present, if they
             # were they would not have been published
-            # TODO: that's not true only if they are published from a terminal 
+            # TODO: that's not true if they are published from a terminal, which is technically possible
             self.p = np.append(self.p, [[coord[0], coord[1]]], axis=0)
 
     def handle_mqtt(self, msg, scatter):

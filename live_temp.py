@@ -2,10 +2,10 @@
     Test to plot the received pixel temperature
 """
 
+from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import CheckButtons
-from datetime import datetime
 import paho.mqtt.client as mqtt
 
 from THERMALCAMERA_S3.videomaker import VideoMaker
@@ -29,10 +29,22 @@ ax.grid()
 fig_text = fig.figure.text(0.75, 0.9, "Waiting for data...")
 
 def on_connect(client, userdata, flags, reason_code, properties):
+    """
+    Subsciribe to desired topic(s)
+
+    Subscribing in on_connect() means that if we lose the connection and
+    reconnect then subscriptions will be renewed.
+    """
+
     print("Connected with result code:", reason_code)
     client.subscribe(MQTT_PATH)
 
 def on_message(client, userdata, msg):
+    """
+    Define what happens when a MQTT message is received: if the topic is the pixel data
+    it adds it to the plot, if it receives a message thet no pixels are currently
+    defined it prints a message
+    """
 
     if msg.topic == "/singlecameras/camera1/pixels/current":
         if msg.payload.decode() == "none":
@@ -89,6 +101,9 @@ video_button = CheckButtons(plt.axes([0.1, 0.9, 0.3, 0.075]), ['Video',], [False
                           check_props={'color':'green', 'linewidth':1})
 
 def video_button_cb(label):
+    """
+    Relate check button state to start/stop of video  
+    """
 
     global video
     if not video.filming:

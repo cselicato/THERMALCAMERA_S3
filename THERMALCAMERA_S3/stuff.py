@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import patches
+from loguru import logger
 
 MIN_X = 0
 MAX_X = 23
@@ -65,7 +66,7 @@ class InterestingPixels:
 
         if msg == "none":
             self.cleanup(scatter)
-            print("Not looking at anything")
+            logger.info("No pixels are defined.")
         else:
             self.get_from_str(msg)
 
@@ -174,6 +175,8 @@ class InterestingArea:
         self.cleanup(ax)    # always remove previous area because only one can be defined
         if msg != "none":
             self.get_from_str(msg)
+        else:
+            logger.info("No area is defined.")
 
     def get_from_click(self, c):
         x_left = int(np.min(c, axis=0)[0])

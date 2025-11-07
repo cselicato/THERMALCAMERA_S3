@@ -3,12 +3,14 @@
 """
 
 import struct
+import sys
 from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
 from matplotlib.widgets import CheckButtons
 import paho.mqtt.client as mqtt
+from loguru import logger
 
 from THERMALCAMERA_S3.videomaker import VideoMaker
 from THERMALCAMERA_S3.stuff import InterestingArea
@@ -17,6 +19,14 @@ from THERMALCAMERA_S3.stuff import InterestingPixels
 
 MQTT_SERVER = "test.mosquitto.org"
 MQTT_PATH = "/singlecameras/camera1/#"
+
+def level_filter(levels):
+    def is_level(record):
+        return record["level"].name in levels
+    return is_level
+
+logger.remove(0)
+logger.add(sys.stderr, filter=level_filter(["WARNING", "DEBUG"]))
 
 # Initialize a list of float as per your data. Below is a random example
 fig, ax = plt.subplots()
@@ -52,8 +62,8 @@ def update_cbar(colorbar, min_temp, max_temp):
     Parameters
     ----------
     cbar : plt.colorbar
-    min_T : float
-    max_T : float 
+    min_temp : float
+    max_temp : float 
     """
 
     upper = np.ceil(max_temp + (max_temp - min_temp)*0.1)
@@ -72,7 +82,7 @@ def on_connect(client, userdata, flags, reason_code, properties):
     reconnect then subscriptions will be renewed.
     """
 
-    print("Connected with result code "+str(reason_code))
+    logger.info(f"Connected with result code {reason_code}")
     client.subscribe(MQTT_PATH)
 
 # The callback for when a PUBLISH message is received from the server.
@@ -86,35 +96,41 @@ def on_message(client, userdata, msg):
     # an image is recieved from the sensor: plot the image and, if video
     # button is clicked, add frame to video
     if msg.topic == "/singlecameras/camera1/image":
-        flo_arr = [struct.unpack('f', msg.payload[i:i+4])[0] for i in range(0, len(msg.payload), 4)]
-        # data must be transposed to match what is shown on AtomS3 display
-        thermal_img = np.array(flo_arr).reshape(24,32).T
-        im.set_data(thermal_img)
+        try:
+            flo_arr = [struct.unpack('f', msg.payload[i:i+4])[0] for i in range(0, len(msg.payload), 4)]
+            # data must be transposed to match what is shown on AtomS3 display
+            thermal_img = np.array(flo_arr).reshape(24,32).T
+            im.set_data(thermal_img)
 
-        if received%10 == 0:
-            # update colorbar according to min and max of the measured temperatures
-            min = np.min(thermal_img)
-            max = np.max(thermal_img)
+            if received%10 == 0:
+                # update colorbar according to min and max of the measured temperatures
+                update_cbar(cbar, np.min(thermal_img), np.max(thermal_img))
+            received += 1
 
-            update_cbar(cbar, np.min(thermal_img), np.max(thermal_img))
-        received += 1
+            fig_text.set_text(datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
+            fig.canvas.draw() # draw canvas
 
-        fig_text.set_text(datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
-        fig.canvas.draw() # draw canvas
-
-        video.add_frame(fig)
+            video.add_frame(fig)
+        except struct.error:
+            logger.warning("Received invalid image")
+            logger.debug(f"Invalid img: {msg.payload}")
+            pass
+        except ValueError:
+            logger.warning("Received invalid image")
+            logger.debug(f"Invalid img: {msg.payload}")
+            pass
 
     if msg.topic == "/singlecameras/camera1/pixels/data":
-        print("Recieved: ", msg.payload.decode())
+        logger.info(f"Pixel data: {msg.payload.decode()}")
 
     if msg.topic == "/singlecameras/camera1/pixels/current":
         # get pixels the camera is already looking at
-        print("Current: ",msg.payload.decode())
+        logger.info(f"Current pixels: {msg.payload.decode()}")
         single_pixels.handle_mqtt(msg.payload.decode(), draw_pixel)
         single_pixels.draw_on(draw_pixel)
 
     if msg.topic == "/singlecameras/camera1/area/data":
-        print("Area data: ", msg.payload.decode())
+        logger.info(f"Area data: {msg.payload.decode()}")
 
     if msg.topic == "/singlecameras/camera1/area/current":
         # get area the camera is already looking at

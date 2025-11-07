@@ -35,7 +35,7 @@ class VideoMaker:
         """
 
         now = datetime.now() # current date and time
-        time = now.strftime("%d_%m_%Y__%H_%M_%S")
+        time = now.strftime("%Y%m%d_%H%M%S")
         
         filename = self.outpath/f"{time}.mp4"
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')

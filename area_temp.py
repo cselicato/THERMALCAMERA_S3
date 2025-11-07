@@ -7,6 +7,7 @@ import re
 import matplotlib.pyplot as plt
 from matplotlib.widgets import CheckButtons
 import paho.mqtt.client as mqtt
+from loguru import logger
 
 from THERMALCAMERA_S3.videomaker import VideoMaker
 

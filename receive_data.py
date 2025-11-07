@@ -26,9 +26,9 @@ def level_filter(levels):
     return is_level
 
 logger.remove(0)
-logger.add(sys.stderr, filter=level_filter(["WARNING", "DEBUG"]))
+logger.add(sys.stderr, filter=level_filter(["WARNING", "DEBUG", "INFO"]))
 
-# Initialize a list of float as per your data. Below is a random example
+# Initialize a list of float as per the image data
 fig, ax = plt.subplots()
 fig.set_size_inches(4,5)
 im = ax.imshow(np.random.rand(32,24)*30+10, cmap='inferno')
@@ -40,7 +40,7 @@ cbar_ticks = np.linspace(10., 40., num=7, endpoint=True)
 cbar.set_ticks(cbar_ticks)
 cbar.minorticks_on()
 
-clicks = np.empty((0, 2), dtype=int)
+clicks = np.empty((0, 2), dtype=int)    # array for mouse clicks to define area
 
 draw_pixel, = ax.plot([], [], marker='+', color='red', markersize=12, linestyle='None')
 draw_clicks, = ax.plot([], [], marker='+', color='blue', markersize=12, linestyle='None')
@@ -125,7 +125,6 @@ def on_message(client, userdata, msg):
 
     if msg.topic == "/singlecameras/camera1/pixels/current":
         # get pixels the camera is already looking at
-        logger.info(f"Current pixels: {msg.payload.decode()}")
         single_pixels.handle_mqtt(msg.payload.decode(), draw_pixel)
         single_pixels.draw_on(draw_pixel)
 
@@ -160,25 +159,26 @@ def on_click(event):
         clicks = np.append(clicks, [(x, y)], axis=0)
 
         if clicks.shape[0]>2:   # reset area with more than two clicks
-            print("Resetting interesting area, click again")
+            print("Click again to redefine area") # NOTE: making the area disappear is misleading
+                                                  # because it is not being resetted
             clicks = np.empty((0, 2), dtype=int)
-            area.cleanup(ax)
 
         draw_clicks.set_data(clicks[:,0],clicks[:,1])
 
         if clicks.shape[0] == 2:
-            area.cleanup(ax) # remove drawing of previous area and delete previous one
-            area.get_from_click(clicks)    # get defined area
+            area.get_from_click(clicks)    # get defined area            
+            area.cleanup(ax) # remove drawing of previous area
+            area.draw_on(ax) # and draw current one
+
             # publish the selected area
             client.publish("/singlecameras/camera1/area", str(area))
-            area.draw_on(ax) # draw current area
             print("The selected area is ",str(area))
 
     else:
         # if area button is not clicked get point coordinates and publish them
-        # if coordinates are already present, do not append them nor publish
+        # if coordinates are already present, it does not append nor publish them
         if single_pixels.get_from_click(x, y):
-            # publish pixel position
+            # publish position of the last pixel
             client.publish("/singlecameras/camera1/pixels/coord", single_pixels.new_pixel())
             single_pixels.draw_on(draw_pixel)
 

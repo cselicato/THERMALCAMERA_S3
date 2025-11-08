@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import CheckButtons
 import paho.mqtt.client as mqtt
+from loguru import logger
 
 from THERMALCAMERA_S3.videomaker import VideoMaker
 
@@ -52,43 +53,43 @@ def on_message(client, userdata, msg):
 
     if msg.topic == "/singlecameras/camera1/pixels/data":
         # Data is received as: 2 25 30.77,19 18 23.87,11 9 23.22
-        rc = list(map(str, msg.payload.decode().split(',')))
-        # print(rc)
+        try:
+            rc = list(map(str, msg.payload.decode().split(',')))
 
-        current = np.empty((0, 3))
-        for i, pixel in enumerate(rc):
-            info = np.array(list(map(float, pixel.split(' '))))
-            # print(info)
-            current = np.append(current, [info], axis=0)
+            current = np.empty((0, 3))
+            for i, pixel in enumerate(rc):
+                info = np.array(list(map(float, pixel.split(' '))))
+                current = np.append(current, [info], axis=0)
 
-        # print(current)
-        fig_text.set_text(f"Showing {int(current[0][0])}, {int(current[0][1])}")
-        value = current[0][2]
+            fig_text.set_text(f"Showing {int(current[0][0])}, {int(current[0][1])}")
+            value = current[0][2]
 
-        x = (datetime.now() - start_time).total_seconds()
-        xdata.append(x)
-        ydata.append(value)
+            x = (datetime.now() - start_time).total_seconds()
+            xdata.append(x)
+            ydata.append(value)
 
-        # plot has to be updated in the callback (so when data is received)
-        scatter.set_data(xdata, ydata)
+            # plot has to be updated in the callback (so when data is received)
+            scatter.set_data(xdata, ydata)
 
-        if x >= ax.get_xlim()[1]:
-            ax.set_xlim(0, x + 10)
+            if x >= ax.get_xlim()[1]:
+                ax.set_xlim(0, x + 10)
 
-        ymin, ymax = ax.get_ylim()
-        new_min = min(ydata)
-        new_max = max(ydata)
+            ymin, ymax = ax.get_ylim()
+            new_min = min(ydata)
+            new_max = max(ydata)
 
-        pad = 0.1 * (new_max - new_min if new_max != new_min else 1)
-        new_min -= pad
-        new_max += pad
+            pad = 0.1 * (new_max - new_min if new_max != new_min else 1)
+            new_min -= pad
+            new_max += pad
 
-        if new_min < ymin or new_max > ymax:
-            ax.set_ylim(new_min, new_max)
+            if new_min < ymin or new_max > ymax:
+                ax.set_ylim(new_min, new_max)
 
-        ax.figure.canvas.draw()
-        video.add_frame(fig)
-
+            ax.figure.canvas.draw()
+            video.add_frame(fig)
+        except ValueError:
+            logger.warning(f"Received data has invalid format: {msg.payload}")
+            pass
 
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 client.on_connect = on_connect

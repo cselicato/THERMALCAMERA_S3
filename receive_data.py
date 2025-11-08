@@ -26,7 +26,7 @@ def level_filter(levels):
     return is_level
 
 logger.remove(0)
-logger.add(sys.stderr, filter=level_filter(["WARNING", "DEBUG", "INFO"]))
+logger.add(sys.stderr, filter=level_filter(["WARNING", "DEBUG"]))
 
 # Initialize a list of float as per the image data
 fig, ax = plt.subplots()
@@ -73,6 +73,16 @@ def update_cbar(colorbar, min_temp, max_temp):
     ticks = np.linspace(lower, upper, num=10, endpoint=True,)
     colorbar.set_ticks(ticks)
 
+def video_button_cb(label):
+
+    global video
+    if not video.filming:
+        # when checkbox is clicked and previously the video was not being saved,
+        # start video
+        video.start_video()
+    else:
+        # if video was being taken, stop and save the file
+        video.stop_video()
 
 def on_connect(client, userdata, flags, reason_code, properties):
     """
@@ -187,7 +197,7 @@ client.on_connect = on_connect
 client.on_message = on_message
 client.connect(MQTT_SERVER, 1883, 60)
 
-client.loop_start()
+
 cid = fig.canvas.mpl_connect('button_press_event', on_click)
 cursor = Cursor(ax, useblit=True, color='black', linewidth=1 )
 
@@ -196,17 +206,16 @@ area_button = CheckButtons(plt.axes([0.45, 0.9, 0.3, 0.075]), ['Select area',],
 video_button = CheckButtons(plt.axes([0.1, 0.9, 0.3, 0.075]), ['Video',], [False,],
                           check_props={'color':'green', 'linewidth':1})
 
-def video_button_cb(label):
-
-    global video
-    if not video.filming:
-        # when checkbox is clicked and previously the video was not being saved,
-        # start video
-        video.start_video()
-    else:
-        # if video was being taken, stop and save the file
-        video.stop_video()
-
 video_button.on_clicked(video_button_cb)
 
-plt.show()
+
+try:
+    client.loop_start()
+    plt.show()
+except KeyboardInterrupt:
+    plt.close("all")
+    logger.info("Shutting down...")
+finally:
+    client.loop_stop()
+    client.disconnect()
+

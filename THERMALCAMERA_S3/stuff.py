@@ -53,7 +53,7 @@ class InterestingPixels:
                 coord = list(map(int, pixel.split(' ')))
                 if  not np.any(np.all(self.p == coord, axis=1)): # not already present: 
                     self.p = np.append(self.p, [[coord[0], coord[1]]], axis=0)
-            logger.info(f"Current pixels: {self.p}")    # very very ugly
+            logger.debug(f"Current pixels: {self.p}")    # very very ugly
             
         except ValueError:
             logger.warning(f"Received pixels have invalid format: {msg}")
@@ -194,6 +194,7 @@ class InterestingArea:
             self.cleanup(ax)
         else:
             self.get_from_str(msg)
+            logger.debug(f"Current area: {self.a}")
 
     def get_from_click(self, c):
         x_left = int(np.min(c, axis=0)[0])

@@ -565,7 +565,7 @@ String area_data(std::vector<int> a, float values[COLS * ROWS]){
         y = a[1];
         w = a[2];
         h = a[3];
-        out_msg = " max: "+String(max)+" min: "+String(min)+" avg: "+String(avg)+" x: "+String(x)+" y: "+String(y)+" w: "+String(w)+" h: "+String(h);
+        out_msg = "max: "+String(max)+" min: "+String(min)+" avg: "+String(avg)+" x: "+String(x)+" y: "+String(y)+" w: "+String(w)+" h: "+String(h);
         Serial.printf("Number of pixels in area: %i ",w*h);
     }
 

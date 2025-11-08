@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import patches
+from loguru import logger
 
 MIN_X = 0
 MAX_X = 23
@@ -32,6 +33,7 @@ class InterestingPixels:
         """
         Add selected pixels to scatter plot
         """
+
         scatter.set_data(self.p[:,0],self.p[:,1])
 
     def get_from_str(self, msg):
@@ -44,14 +46,18 @@ class InterestingPixels:
                 received MQTT message as a string
         """
 
-        current = list(map(str, msg.split(',')))
-        # add each pixel
-        for i, pixel in enumerate(current):
-            coord = list(map(int, pixel.split(' ')))
-            # there is no need to check if coord. are already present, if they
-            # were they would not have been published
-            # TODO: that's not true if they are published from a terminal, which is technically possible
-            self.p = np.append(self.p, [[coord[0], coord[1]]], axis=0)
+        try:
+            current = list(map(str, msg.split(',')))
+            # add each pixel
+            for i, pixel in enumerate(current):
+                coord = list(map(int, pixel.split(' ')))
+                if  not np.any(np.all(self.p == coord, axis=1)): # not already present: 
+                    self.p = np.append(self.p, [[coord[0], coord[1]]], axis=0)
+            logger.debug(f"Current pixels: {self.p}")    # very very ugly
+            
+        except ValueError:
+            logger.warning(f"Received pixels have invalid format: {msg}")
+
 
     def handle_mqtt(self, msg, scatter):
         """
@@ -65,7 +71,7 @@ class InterestingPixels:
 
         if msg == "none":
             self.cleanup(scatter)
-            print("Not looking at anything")
+            logger.info("No pixels are defined.")
         else:
             self.get_from_str(msg)
 
@@ -82,7 +88,7 @@ class InterestingPixels:
         Returns
         -------
         bool
-            true if pixel has been addes
+            true if pixel has been added
         """
 
         if x>MAX_X: 
@@ -93,8 +99,7 @@ class InterestingPixels:
             y = MAX_Y
         elif y<MIN_Y:
             y = MIN_Y
-
-        if [(x, y)] not in self.p:
+        if  not np.any(np.all(self.p == [(x,y)], axis=1)): # not already present: 
             self.p = np.append(self.p, [(x, y)], axis=0)  # append pixel to array
             return True
         else:
@@ -122,11 +127,11 @@ class InterestingArea:
     """
 
     def __init__(self):
-        self.a = np.empty((0, 4))   # is this the only way?
+        self.a = np.empty((0, 4),dtype=int)
 
     def cleanup(self, axes):
         """
-        Empty area array and delete drawing from axes
+        Delete area drawing from axes
 
         Parameters
         ----------
@@ -135,7 +140,6 @@ class InterestingArea:
 
         for p in reversed(axes.patches): # remove previously drawn patches
             p.remove()
-        self.a = np.empty((0, 4), dtype=int)
 
     def draw_on(self, ax):
         """
@@ -146,7 +150,8 @@ class InterestingArea:
         ax : matplotlib Axes
         """
         if self.a.shape[0]>0:
-            x_left, y_low, w, h = self.a[0][:]; #, self.a[0][1], self.a[0][2], self.a[0][3]
+            self.cleanup(ax) # TODO: this has been added to prevent double drawing, but maybe there is a better way
+            x_left, y_low, w, h = self.a[0][:]
             rect = patches.Rectangle((x_left-0.5, y_low-0.5), w, h, linewidth=1, edgecolor='b', facecolor='none')
             ax.add_patch(rect)
 
@@ -160,10 +165,22 @@ class InterestingArea:
               received MQTT message as a string
         """
 
-        self.a = np.append(self.a, [list(map(int, msg.split(' ')))], axis=0)
+        try:
+            # coordinates MUST be integers
+            self.a = np.array([list(map(int, msg.split(' ')))], dtype=int)
+            # NOTE: self.a is redefined as the new area, it's not appended as in the case of the pixels:
+            #       this is beacause only one area is defined
+        except ValueError:
+            logger.warning(f"Received area has invalid format: {msg}, still using previous area")
+            pass
 
     def handle_mqtt(self, msg, ax):
         """
+        Get current area from MQTT message.
+
+        If no area is defined ("none") remove drawing, else (if message can be correctly parsed)
+        redefine area and then remove previous drawing
+
         Parameters
         ----------
         msg : str
@@ -171,9 +188,13 @@ class InterestingArea:
         ax : matplotlib Axes
         """
 
-        self.cleanup(ax)    # always remove previous area because only one can be defined
-        if msg != "none":
+        if msg == "none":
+            logger.info("No area is defined.")
+            self.a = np.empty((0, 4),dtype=int)
+            self.cleanup(ax)
+        else:
             self.get_from_str(msg)
+            logger.debug(f"Current area: {self.a}")
 
     def get_from_click(self, c):
         x_left = int(np.min(c, axis=0)[0])
@@ -196,7 +217,7 @@ class InterestingArea:
         if y_low+h>MAX_Y+1: 
             h = MAX_Y+1-y_low
         
-        self.a = np.append(self.a, [(x_left, y_low, w, h)], axis=0)
+        self.a = np.array([(x_left, y_low, w, h)], dtype=int)
 
     def __str__(self):
         """
@@ -204,5 +225,5 @@ class InterestingArea:
         "x_left y_low w h"
         """
 
-        return f"{self.a[0][0]} {self.a[0][1]} {self.a[0][2]} {self.a[0][3]}" # fa un po' schifo così
+        return f"{self.a[0][0]} {self.a[0][1]} {self.a[0][2]} {self.a[0][3]}" # it's a bit ugly
     

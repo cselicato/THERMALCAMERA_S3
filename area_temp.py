@@ -59,7 +59,6 @@ def on_message(client, userdata, msg):
     if msg.topic == "/singlecameras/camera1/area/data":
         # Data is received as:  max: 31.81 min: 26.04 avg: 29.74 x: 0 y: 14 w: 5 h: 5
         try:
-            logger.debug("---------------------------------")
             st = msg.payload.decode()
             pattern = r'(\w+):\s(\d+\.?\d?)'
             matches = re.findall(pattern, st)
@@ -108,8 +107,6 @@ client.on_connect = on_connect
 client.on_message = on_message
 client.connect(MQTT_SERVER, 1883, 60)
 
-client.loop_start()
-
 video_button = CheckButtons(plt.axes([0.1, 0.9, 0.3, 0.075]), ['Video',], [False,],
                           check_props={'color':'green', 'linewidth':1})
 
@@ -129,4 +126,14 @@ def video_button_cb(label):
 
 video_button.on_clicked(video_button_cb)
 
-plt.show(block=True)
+try:
+    client.loop_start()
+    plt.show()
+except KeyboardInterrupt:
+    plt.close("all")
+    logger.info("Closed plot.")
+finally:
+    logger.info("Stopping loop and disconnecting...")
+    client.loop_stop()
+    client.disconnect()
+    logger.info("Done, stopping script.")

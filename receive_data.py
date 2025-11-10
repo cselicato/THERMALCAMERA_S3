@@ -62,20 +62,17 @@ ax_pixels.margins(0.15)
 pix_text = data_fig.figure.text(0.45, 0.97, "Waiting for data...")
 
 # setup for visualization of area data
-times, avg_T, max_T, min_T = [], [], [], []
-sc_avg, = ax_area.plot([], [], color='green', markersize=12, label=r"$T_{avg}$")
-sc_max, = ax_area.plot([], [], color='red', markersize=12, label=r"$T_{max}$")
-sc_min, = ax_area.plot([], [], color='blue', markersize=12, label=r"$T_{min}$")
-
 ax_area.set_xlabel("Time from start [s]")
 ax_area.set_ylabel("T [°C]")
 ax_area.grid()
 ax_area.margins(0.15)
-ax_area.legend(loc="upper left", bbox_to_anchor=(1,0.5))
 fig_text = fig.figure.text(0.45, 0.48, "Waiting for data...")
 
 pixels_data = {} # will contain the pixel as a key and as a value another dict
                  #  with the times, values and Line2D 
+
+area_data = {} # will contain the area as a key and as a value another dict
+               #  with the times, values and Line2D (even though only one area at the time is defined)
 
 draw_pixel, = ax_img.plot([], [], marker='+', color='red', markersize=12, linestyle='None')
 draw_clicks, = ax_img.plot([], [], marker='+', color='blue', markersize=12, linestyle='None')
@@ -173,7 +170,6 @@ def on_message(client, userdata, msg):
             # get current pixels and data from message
             current = [list(map(float, p.split(' '))) for p in msg.payload.decode().split(",")]
             t = (datetime.now() - start_time).total_seconds()
-            # TODO: it would probably be more useful with the UTC time on the x axis
 
             # now update value in dictionary or add new one if not present
             for x, y, val in current:
@@ -196,7 +192,7 @@ def on_message(client, userdata, msg):
             ax_pixels.autoscale_view()
             pix_text.set_text(f"Number of current pixels: {len(current)}")
         except ValueError:
-            logger.warning(f"Received data has invalid format: {msg}")
+            logger.warning(f"Received data has invalid format: {msg.payload}")
             pass
 
     if msg.topic == "/singlecameras/camera1/pixels/current":
@@ -216,26 +212,33 @@ def on_message(client, userdata, msg):
             x, y, w, h = data["x"], data["y"], data["w"], data["h"]
             fig_text.set_text(f"Area: ({int(x)}, {int(y)}), w={int(w)} h={int(h)}")
 
-
-
             if (data["max"] and data["min"] and data["avg"]): # values should be appended only if they are all present
                 x = (datetime.now() - start_time).total_seconds()
-                avg_T.append(data["avg"]) # accessing the dictionary like this allows for KeyError
-                min_T.append(data["min"])
-                max_T.append(data["max"])
-                times.append(x)
-                # plot has to be updated in the callback (so when data is received)
-                sc_avg.set_data(times, avg_T)
-                sc_min.set_data(times, min_T)
-                sc_max.set_data(times, max_T)
-
+                if str(area) not in area_data:
+                    # create 2DLine for min, max and avg
+                    l_avg, = ax_area.plot([], [], color='green', markersize=12, label=r"$T_{avg}$")
+                    l_min, = ax_area.plot([], [], color='blue', markersize=12, label=r"$T_{min}$")
+                    l_max, = ax_area.plot([], [], color='red', markersize=12, label=r"$T_{max}$")
+                    if not hasattr(ax_area, "_legend"):
+                        ax_area.legend(loc="upper left", bbox_to_anchor=(1,0.5))
+                    area_data[str(area)] = {"times" : [], "avg" : [], "min" : [], "max" : [],
+                                            "l_avg" : l_avg, "l_min" : l_min, "l_max" : l_max}
+                # only the currently defined area data is getting updated
+                a = area_data[str(area)]
+                a["times"].append(x)
+                a["avg"].append(data["avg"])
+                a["min"].append(data["min"])
+                a["max"].append(data["max"])
+                a["l_avg"].set_data(a["times"], a["avg"])
+                a["l_min"].set_data(a["times"], a["min"])
+                a["l_max"].set_data(a["times"], a["max"])                
+                
                 # update plot axes
                 ax_area.relim()
                 ax_area.autoscale_view()
-                video.add_frame(img_fig)
 
         except (TypeError, KeyError):
-            logger.warning(f"Received data has invalid format: {msg}")
+            logger.warning(f"Received data has invalid format: {msg.payload}")
             pass
 
 

@@ -5,6 +5,7 @@
 import struct
 import sys
 from datetime import datetime
+import re
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
@@ -59,6 +60,19 @@ ax_pixels.set_xlabel("Time from start [s]")
 ax_pixels.set_ylabel("T [°C]")
 ax_pixels.grid()
 pix_text = data_fig.figure.text(0.45, 0.97, "Waiting for data...")
+
+# setup for visualization of area data
+times, avg_T, max_T, min_T = [], [], [], []
+sc_avg, = ax_area.plot([], [], color='green', markersize=12, label=r"$T_{avg}$")
+sc_max, = ax_area.plot([], [], color='red', markersize=12, label=r"$T_{max}$")
+sc_min, = ax_area.plot([], [], color='blue', markersize=12, label=r"$T_{min}$")
+
+ax_area.set_xlabel("Time from start [s]")
+ax_area.set_ylabel("T [°C]")
+ax_area.set_xlim(0, 10)
+ax_area.grid()
+ax_area.legend(loc="upper left", bbox_to_anchor=(1,1))
+fig_text = fig.figure.text(0.45, 0.48, "Waiting for data...")
 
 pixels_data = {} # will contain the pixel as a key and as a value another dict
                  #  with the times, values and Line2D 
@@ -124,7 +138,7 @@ def on_message(client, userdata, msg):
     Define what happens when a MQTT message is received
     """
 
-    global im, single_pixels, area, received
+    global im, single_pixels, area, received, times, avg_T, max_T, min_T
 
     # an image is recieved from the sensor: plot the image and, if video
     # button is clicked, add frame to video
@@ -143,7 +157,7 @@ def on_message(client, userdata, msg):
             time_text.set_text(datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
             fig.canvas.draw() # draw canvas
 
-            video.add_frame(fig)
+            video.add_frame(img_fig)
         except struct.error:
             logger.warning("Received invalid image")
             logger.debug(f"Invalid img: {msg.payload}")
@@ -154,8 +168,9 @@ def on_message(client, userdata, msg):
             pass
 
     if msg.topic == "/singlecameras/camera1/pixels/data":
-        logger.debug(f"Pixel data: {msg.payload.decode()}")
+
         try:
+            logger.debug(f"Pixel data: {msg.payload.decode()}")
             # get current pixels and data from message
             current = [list(map(float, p.split(' '))) for p in msg.payload.decode().split(",")]
             t = (datetime.now() - start_time).total_seconds()
@@ -195,7 +210,6 @@ def on_message(client, userdata, msg):
 
             pix_text.set_text(f"Number of current pixels: {len(current)}")
             ax_pixels.figure.canvas.draw()
-            video.add_frame(fig)
         except ValueError:
             logger.warning(f"Received data has invalid format: {msg}")
             pass
@@ -206,7 +220,51 @@ def on_message(client, userdata, msg):
         single_pixels.draw_on(draw_pixel)
 
     if msg.topic == "/singlecameras/camera1/area/data":
-        logger.debug(f"Area data: {msg.payload.decode()}")
+        try:
+            logger.debug(f"Area data: {msg.payload.decode()}")
+            st = msg.payload.decode()
+            pattern = r'(\w+):\s(\d+\.?\d?)'
+            matches = re.findall(pattern, st)
+            # Convert to dictionary, converting numbers to float or int automatically
+            data = {k: float(v) if "." in v else int(v) for k, v in matches}
+
+            x, y, w, h = data["x"], data["y"], data["w"], data["h"]
+            fig_text.set_text(f"Showing ({int(x)}, {int(y)}), w={int(w)} h={int(h)}")
+
+
+
+            if (data["max"] and data["min"] and data["avg"]): # values should be appended only if they are all present
+                x = (datetime.now() - start_time).total_seconds()
+                avg_T.append(data["avg"]) # accessing the dictionary like this allows for KeyError
+                min_T.append(data["min"])
+                max_T.append(data["max"])
+                times.append(x)
+                # plot has to be updated in the callback (so when data is received)
+                sc_avg.set_data(times, avg_T)
+                sc_min.set_data(times, min_T)
+                sc_max.set_data(times, max_T)
+
+                if x >= ax_area.get_xlim()[1]:
+                    ax_area.set_xlim(0, x + 10)
+
+                ymin, ymax = ax_area.get_ylim()
+                new_min = min(*avg_T, *min_T, *max_T)
+                new_max = max(*avg_T, *min_T, *max_T)
+
+                pad = 0.1 * (new_max - new_min if new_max != new_min else 1)
+                new_min -= pad
+                new_max += pad
+
+                if new_min < ymin or new_max > ymax:
+                    ax_area.set_ylim(new_min, new_max)
+
+                ax_area.figure.canvas.draw()
+                video.add_frame(fig)
+
+        except (TypeError, KeyError):
+            logger.warning(f"Received data has invalid format: {msg}")
+            pass
+
 
     if msg.topic == "/singlecameras/camera1/area/current":
         # get area the camera is already looking at

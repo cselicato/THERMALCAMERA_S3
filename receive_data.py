@@ -5,9 +5,9 @@
 import struct
 import sys
 from datetime import datetime
+import re
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Cursor
 from matplotlib.widgets import Button
 from matplotlib.widgets import CheckButtons
 import paho.mqtt.client as mqtt
@@ -29,23 +29,56 @@ def level_filter(levels):
 logger.remove(0)
 logger.add(sys.stderr, filter=level_filter(["WARNING", "INFO"]))
 
-# Initialize a list of float as per the image data
-fig, ax = plt.subplots()
-fig.set_size_inches(4,5)
-im = ax.imshow(np.random.rand(32,24)*30+10, cmap='inferno')
+start_time = datetime.now()
 
-fig_text = fig.figure.text(0.05, 0.05, "Waiting for data...")
+fig = plt.figure(figsize=(10, 5))
+gs = fig.add_gridspec(1, 2, width_ratios=[0.4, 0.6], wspace=0.15)
+# create subfigures
+img_fig = fig.add_subfigure(gs[0])
+data_fig = fig.add_subfigure(gs[1])
+# get axes
+ax_img = img_fig.subplots()
+# create subplots for pixels data and adjust spacing
+ax_pixels, ax_area = data_fig.subplots(2, 1)
+# clear space for legend and make it look right
+data_fig.subplots_adjust(right=0.77, hspace=0.5, top=0.95, bottom=0.1)
+img_fig.subplots_adjust(top=0.95, bottom=0.1, right=0.9, left=0.15)
+
+# setup for image visualization
+# Initialize a list of float as per the image data
+im = ax_img.imshow(np.random.rand(32,24)*30+10, cmap='inferno')
+time_text = img_fig.figure.text(0.4*0.05, 0.05, "Waiting for data...")
 # create colorbar
-cbar = plt.colorbar(im, shrink=0.86)
+cbar = plt.colorbar(im, shrink=0.8)
 cbar_ticks = np.linspace(10., 40., num=7, endpoint=True)
 cbar.set_ticks(cbar_ticks)
 cbar.minorticks_on()
 
+# setup for visualization of pixel data
+ax_pixels.set_xlabel("Time from start [s]")
+ax_pixels.set_ylabel("T [°C]")
+ax_pixels.grid()
+ax_pixels.margins(0.15)
+pix_text = data_fig.figure.text(0.45, 0.97, "Waiting for data...")
+
+# setup for visualization of area data
+ax_area.set_xlabel("Time from start [s]")
+ax_area.set_ylabel("T [°C]")
+ax_area.grid()
+ax_area.margins(0.15)
+fig_text = fig.figure.text(0.45, 0.48, "Waiting for data...")
+
+pixels_data = {} # will contain the pixel as a key and as a value another dict
+                 #  with the times, values and Line2D 
+
+area_data = {} # will contain the area as a key and as a value another dict
+               #  with the times, values and Line2D (even though only one area at the time is defined)
+
+draw_pixel, = ax_img.plot([], [], marker='+', color='red', markersize=12, linestyle='None')
+draw_clicks, = ax_img.plot([], [], marker='+', color='blue', markersize=12, linestyle='None')
+
+
 clicks = np.empty((0, 2), dtype=int)    # array for mouse clicks to define area
-
-draw_pixel, = ax.plot([], [], marker='+', color='red', markersize=12, linestyle='None')
-draw_clicks, = ax.plot([], [], marker='+', color='blue', markersize=12, linestyle='None')
-
 received = 0    # counter for how many thermal images have been received
 
 video = VideoMaker("display")
@@ -102,7 +135,7 @@ def on_message(client, userdata, msg):
     Define what happens when a MQTT message is received
     """
 
-    global im, single_pixels, area, received
+    global im, single_pixels, area, received, times, avg_T, max_T, min_T
 
     # an image is recieved from the sensor: plot the image and, if video
     # button is clicked, add frame to video
@@ -118,10 +151,10 @@ def on_message(client, userdata, msg):
                 update_cbar(cbar, np.min(thermal_img), np.max(thermal_img))
             received += 1
 
-            fig_text.set_text(datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
+            time_text.set_text(datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
             fig.canvas.draw() # draw canvas
 
-            video.add_frame(fig)
+            video.add_frame(img_fig)
         except struct.error:
             logger.warning("Received invalid image")
             logger.debug(f"Invalid img: {msg.payload}")
@@ -132,7 +165,35 @@ def on_message(client, userdata, msg):
             pass
 
     if msg.topic == "/singlecameras/camera1/pixels/data":
-        logger.debug(f"Pixel data: {msg.payload.decode()}")
+        try:
+            logger.debug(f"Pixel data: {msg.payload.decode()}")
+            # get current pixels and data from message
+            current = [list(map(float, p.split(' '))) for p in msg.payload.decode().split(",")]
+            t = (datetime.now() - start_time).total_seconds()
+
+            # now update value in dictionary or add new one if not present
+            for x, y, val in current:
+                pixel = (int(x), int(y))
+                if pixel not in pixels_data: # add to dict and make new line
+                    logger.info(f"Receiving new pixel: {pixel}")
+                    # create line for its data
+                    l, = ax_pixels.plot([], [], label=str(pixel), color=np.random.rand(3,))
+                    ax_pixels.legend(loc="upper left", bbox_to_anchor=(1,1))
+                    # add (empty) data and Line2D to dict
+                    pixels_data[pixel] = {"times": [], "temps": [], "line": l}
+                # add values (temperature and time)
+                single = pixels_data[pixel]
+                single["times"].append(t)
+                single["temps"].append(val)
+                single["line"].set_data(single["times"], single["temps"])
+
+            # update plot axes
+            ax_pixels.relim()
+            ax_pixels.autoscale_view()
+            pix_text.set_text(f"Number of current pixels: {len(current)}")
+        except ValueError:
+            logger.warning(f"Received data has invalid format: {msg.payload}")
+            pass
 
     if msg.topic == "/singlecameras/camera1/pixels/current":
         # get pixels the camera is already looking at
@@ -140,12 +201,51 @@ def on_message(client, userdata, msg):
         single_pixels.draw_on(draw_pixel)
 
     if msg.topic == "/singlecameras/camera1/area/data":
-        logger.debug(f"Area data: {msg.payload.decode()}")
+        try:
+            logger.debug(f"Area data: {msg.payload.decode()}")
+            st = msg.payload.decode()
+            pattern = r'(\w+):\s(\d+\.?\d?)'
+            matches = re.findall(pattern, st)
+            # Convert to dictionary, converting numbers to float or int automatically
+            data = {k: float(v) if "." in v else int(v) for k, v in matches}
+
+            x, y, w, h = data["x"], data["y"], data["w"], data["h"]
+            fig_text.set_text(f"Area: ({int(x)}, {int(y)}), w={int(w)} h={int(h)}")
+
+            if (data["max"] and data["min"] and data["avg"]): # values should be appended only if they are all present
+                x = (datetime.now() - start_time).total_seconds()
+                if str(area) not in area_data:
+                    # create 2DLine for min, max and avg
+                    l_avg, = ax_area.plot([], [], color='green', markersize=12, label=r"$T_{avg}$")
+                    l_min, = ax_area.plot([], [], color='blue', markersize=12, label=r"$T_{min}$")
+                    l_max, = ax_area.plot([], [], color='red', markersize=12, label=r"$T_{max}$")
+                    if not hasattr(ax_area, "_legend"):
+                        ax_area.legend(loc="upper left", bbox_to_anchor=(1,0.5))
+                    area_data[str(area)] = {"times" : [], "avg" : [], "min" : [], "max" : [],
+                                            "l_avg" : l_avg, "l_min" : l_min, "l_max" : l_max}
+                # only the currently defined area data is getting updated
+                a = area_data[str(area)]
+                a["times"].append(x)
+                a["avg"].append(data["avg"])
+                a["min"].append(data["min"])
+                a["max"].append(data["max"])
+                a["l_avg"].set_data(a["times"], a["avg"])
+                a["l_min"].set_data(a["times"], a["min"])
+                a["l_max"].set_data(a["times"], a["max"])                
+                
+                # update plot axes
+                ax_area.relim()
+                ax_area.autoscale_view()
+
+        except (TypeError, KeyError):
+            logger.warning(f"Received data has invalid format: {msg.payload}")
+            pass
+
 
     if msg.topic == "/singlecameras/camera1/area/current":
         # get area the camera is already looking at
-        area.handle_mqtt(msg.payload.decode(),ax)
-        area.draw_on(ax)
+        area.handle_mqtt(msg.payload.decode(),ax_img)
+        area.draw_on(ax_img)
 
 
 def on_click(event):
@@ -157,7 +257,7 @@ def on_click(event):
 
     global area, clicks, single_pixels
 
-    if not event.inaxes == ax:
+    if not event.inaxes == ax_img:
         # when the click is outside of the axes do nothing
         return
 
@@ -178,8 +278,8 @@ def on_click(event):
 
         if clicks.shape[0] == 2:
             area.get_from_click(clicks)    # get defined area
-            area.cleanup(ax) # remove drawing of previous area
-            area.draw_on(ax) # and draw current one
+            area.cleanup(ax_img) # remove drawing of previous area
+            area.draw_on(ax_img) # and draw current one
 
             # publish the selected area
             client.publish("/singlecameras/camera1/area", str(area))
@@ -200,11 +300,10 @@ client.connect(MQTT_SERVER, 1883, 60)
 
 
 cid = fig.canvas.mpl_connect('button_press_event', on_click)
-cursor = Cursor(ax, useblit=True, color='black', linewidth=1 )
 
-area_button = CheckButtons(plt.axes([0.45, 0.9, 0.3, 0.075]), ['Select area',],
+area_button = CheckButtons(plt.axes([0.4*0.45, 0.9, 0.4*0.3, 0.075]), ['Select area',],
                            [False,], check_props={'color':'red', 'linewidth':1})
-video_button = CheckButtons(plt.axes([0.1, 0.9, 0.3, 0.075]), ['Video',], [False,],
+video_button = CheckButtons(plt.axes([0.4*0.1, 0.9, 0.4*0.3, 0.075]), ['Video',], [False,],
                           check_props={'color':'green', 'linewidth':1})
 
 video_button.on_clicked(video_button_cb)
@@ -215,8 +314,8 @@ def reset_px_cb(event):
 def reset_a_cb(event):
     client.publish("/singlecameras/camera1/area/reset", "1")
 
-reset_pixels = Button(plt.axes([0.47, 0.02, 0.24, 0.075]), "Reset pixels")
-reset_area = Button(plt.axes([0.73, 0.02, 0.24, 0.075]), "Reset area")
+reset_pixels = Button(plt.axes([0.4*0.47, 0.02, 0.4*0.24, 0.075]), "Reset pixels")
+reset_area = Button(plt.axes([0.4*0.73, 0.02, 0.4*0.24, 0.075]), "Reset area")
 
 reset_pixels.on_clicked(reset_px_cb)
 reset_area.on_clicked(reset_a_cb)

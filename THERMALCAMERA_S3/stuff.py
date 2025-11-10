@@ -14,7 +14,13 @@ class InterestingPixels:
     """
 
     def __init__(self):
-        self.p = np.empty((0, 2), dtype=int) 
+        self.p = np.empty((0, 2), dtype=int)
+
+    def __str__(self):
+        s = ""
+        for p in self.p:
+            s += f"({p[0]}, {p[1]}) "
+        return s
 
     def cleanup(self, scatter):
         """
@@ -53,7 +59,7 @@ class InterestingPixels:
                 coord = list(map(int, pixel.split(' ')))
                 if  not np.any(np.all(self.p == coord, axis=1)): # not already present: 
                     self.p = np.append(self.p, [[coord[0], coord[1]]], axis=0)
-            logger.debug(f"Current pixels: {self.p}")    # very very ugly
+            logger.info(f"Current pixels: {self}")
             
         except ValueError:
             logger.warning(f"Received pixels have invalid format: {msg}")
@@ -178,6 +184,7 @@ class InterestingArea:
             self.a = np.array([list(map(int, msg.split(' ')))], dtype=int)
             # NOTE: self.a is redefined as the new area, it's not appended as in the case of the pixels:
             #       this is beacause only one area is defined
+            logger.info(f"Current area: {self.a}")
         except ValueError:
             logger.warning(f"Received area has invalid format: {msg}, still using previous area")
             pass

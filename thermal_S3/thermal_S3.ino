@@ -115,15 +115,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
    Serial.print("Mqtt command:");
    Serial.println(message);
 
-    if(strcmp(topic, "/singlecameras/camera1/air/control") == 0){    // TODO: the python client never publishes on this topic
-        if(message=="1") {
-            Serial.println("Enable");
-            client.publish("/air/status","1");
-        } else {
-            client.publish("/air/status","0");
-            Serial.println("Disable");    }
-    }
-
     if(strcmp(topic, "/singlecameras/camera1/pixels/coord") == 0){
         // get x and y coordinate of the desired pixel and add them to single_pixels
         std::vector<int> coord;
@@ -224,7 +215,6 @@ void reconnect(){
     M5.Display.setCursor(5, 5);
     M5.Display.printf("Connecting to MQTT...");
     if (client.connect(client_name)) {
-    client.subscribe("/singlecameras/camera1/air/control");
     client.subscribe("/singlecameras/camera1/area");
     client.subscribe("/singlecameras/camera1/area/reset");
     client.subscribe("/singlecameras/camera1/pixels/coord");

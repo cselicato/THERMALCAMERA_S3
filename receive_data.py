@@ -8,6 +8,7 @@ from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
+from matplotlib.widgets import Button
 from matplotlib.widgets import CheckButtons
 import paho.mqtt.client as mqtt
 from loguru import logger
@@ -26,16 +27,16 @@ def level_filter(levels):
     return is_level
 
 logger.remove(0)
-logger.add(sys.stderr, filter=level_filter(["WARNING", "DEBUG"]))
+logger.add(sys.stderr, filter=level_filter(["WARNING", "INFO"]))
 
 # Initialize a list of float as per the image data
 fig, ax = plt.subplots()
 fig.set_size_inches(4,5)
 im = ax.imshow(np.random.rand(32,24)*30+10, cmap='inferno')
 
-fig_text = fig.figure.text(0.05, 0.05, "Waiting for thermal image...")
+fig_text = fig.figure.text(0.05, 0.05, "Waiting for data...")
 # create colorbar
-cbar = plt.colorbar(im)
+cbar = plt.colorbar(im, shrink=0.86)
 cbar_ticks = np.linspace(10., 40., num=7, endpoint=True)
 cbar.set_ticks(cbar_ticks)
 cbar.minorticks_on()
@@ -131,7 +132,7 @@ def on_message(client, userdata, msg):
             pass
 
     if msg.topic == "/singlecameras/camera1/pixels/data":
-        logger.info(f"Pixel data: {msg.payload.decode()}")
+        logger.debug(f"Pixel data: {msg.payload.decode()}")
 
     if msg.topic == "/singlecameras/camera1/pixels/current":
         # get pixels the camera is already looking at
@@ -139,7 +140,7 @@ def on_message(client, userdata, msg):
         single_pixels.draw_on(draw_pixel)
 
     if msg.topic == "/singlecameras/camera1/area/data":
-        logger.info(f"Area data: {msg.payload.decode()}")
+        logger.debug(f"Area data: {msg.payload.decode()}")
 
     if msg.topic == "/singlecameras/camera1/area/current":
         # get area the camera is already looking at
@@ -176,7 +177,7 @@ def on_click(event):
         draw_clicks.set_data(clicks[:,0],clicks[:,1])
 
         if clicks.shape[0] == 2:
-            area.get_from_click(clicks)    # get defined area            
+            area.get_from_click(clicks)    # get defined area
             area.cleanup(ax) # remove drawing of previous area
             area.draw_on(ax) # and draw current one
 
@@ -208,6 +209,17 @@ video_button = CheckButtons(plt.axes([0.1, 0.9, 0.3, 0.075]), ['Video',], [False
 
 video_button.on_clicked(video_button_cb)
 
+def reset_px_cb(event):
+    client.publish("/singlecameras/camera1/pixels/reset", "1")
+
+def reset_a_cb(event):
+    client.publish("/singlecameras/camera1/area/reset", "1")
+
+reset_pixels = Button(plt.axes([0.47, 0.02, 0.24, 0.075]), "Reset pixels")
+reset_area = Button(plt.axes([0.73, 0.02, 0.24, 0.075]), "Reset area")
+
+reset_pixels.on_clicked(reset_px_cb)
+reset_area.on_clicked(reset_a_cb)
 
 try:
     client.loop_start()

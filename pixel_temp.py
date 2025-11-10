@@ -25,7 +25,7 @@ fig.set_size_inches(5, 4)
 scatter, = ax.plot([], [], color='red', markersize=12)
 ax.set_xlabel("Time from start [s]")
 ax.set_ylabel("T [°C]")
-ax.set_xlim(0, 10)
+# ax.set_xlim(0, 10)
 ax.grid()
 fig_text = fig.figure.text(0.55, 0.9, "Waiting for data...")
 
@@ -95,7 +95,7 @@ def on_message(client, userdata, msg):
                 if new_min < ymin or new_max > ymax:
                     ax.set_ylim(new_min, new_max)
 
-            fig_text.set_text(f"Received {len(current)} pixels at t={t:.1f}s")
+            fig_text.set_text(f"Number of current pixels: {len(current)}")
             ax.figure.canvas.draw()
             video.add_frame(fig)
         except ValueError:

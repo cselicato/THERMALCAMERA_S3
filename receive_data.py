@@ -29,23 +29,45 @@ def level_filter(levels):
 logger.remove(0)
 logger.add(sys.stderr, filter=level_filter(["WARNING", "INFO"]))
 
-# Initialize a list of float as per the image data
-fig, ax = plt.subplots()
-fig.set_size_inches(4,5)
-im = ax.imshow(np.random.rand(32,24)*30+10, cmap='inferno')
+start_time = datetime.now()
 
-fig_text = fig.figure.text(0.05, 0.05, "Waiting for data...")
+fig = plt.figure(figsize=(10, 5))
+gs = fig.add_gridspec(1, 2, width_ratios=[0.4, 0.6], wspace=0.15)
+# create subfigures
+img_fig = fig.add_subfigure(gs[0])
+data_fig = fig.add_subfigure(gs[1])
+# get axes
+ax_img = img_fig.subplots()
+# create subplots for pixels data and adjust spacing
+ax_pixels, ax_area = data_fig.subplots(2, 1)
+# clear space for legend and make it look right
+data_fig.subplots_adjust(right=0.77, hspace=0.5, top=0.95, bottom=0.1)
+img_fig.subplots_adjust(top=0.95, bottom=0.1, right=0.9, left=0.15)
+
+# setup for image visualization
+# Initialize a list of float as per the image data
+im = ax_img.imshow(np.random.rand(32,24)*30+10, cmap='inferno')
+time_text = img_fig.figure.text(0.4*0.05, 0.05, "Waiting for data...")
 # create colorbar
-cbar = plt.colorbar(im, shrink=0.86)
+cbar = plt.colorbar(im, shrink=0.8)
 cbar_ticks = np.linspace(10., 40., num=7, endpoint=True)
 cbar.set_ticks(cbar_ticks)
 cbar.minorticks_on()
 
+# setup for visualization of pixel data
+ax_pixels.set_xlabel("Time from start [s]")
+ax_pixels.set_ylabel("T [°C]")
+ax_pixels.grid()
+pix_text = data_fig.figure.text(0.45, 0.97, "Waiting for data...")
+
+pixels_data = {} # will contain the pixel as a key and as a value another dict
+                 #  with the times, values and Line2D 
+
+draw_pixel, = ax_img.plot([], [], marker='+', color='red', markersize=12, linestyle='None')
+draw_clicks, = ax_img.plot([], [], marker='+', color='blue', markersize=12, linestyle='None')
+
+
 clicks = np.empty((0, 2), dtype=int)    # array for mouse clicks to define area
-
-draw_pixel, = ax.plot([], [], marker='+', color='red', markersize=12, linestyle='None')
-draw_clicks, = ax.plot([], [], marker='+', color='blue', markersize=12, linestyle='None')
-
 received = 0    # counter for how many thermal images have been received
 
 video = VideoMaker("display")
@@ -118,7 +140,7 @@ def on_message(client, userdata, msg):
                 update_cbar(cbar, np.min(thermal_img), np.max(thermal_img))
             received += 1
 
-            fig_text.set_text(datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
+            time_text.set_text(datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
             fig.canvas.draw() # draw canvas
 
             video.add_frame(fig)
@@ -133,6 +155,50 @@ def on_message(client, userdata, msg):
 
     if msg.topic == "/singlecameras/camera1/pixels/data":
         logger.debug(f"Pixel data: {msg.payload.decode()}")
+        try:
+            # get current pixels and data from message
+            current = [list(map(float, p.split(' '))) for p in msg.payload.decode().split(",")]
+            t = (datetime.now() - start_time).total_seconds()
+            # TODO: it would probably be more useful with the UTC time on the x axis
+
+            # now update value in dictionary or add new one if not present
+            for x, y, val in current:
+                pixel = (int(x), int(y))
+                if pixel not in pixels_data: # add to dict and make new line
+                    logger.info(f"Receiving new pixel: {pixel}")
+                    # create line for its data
+                    l, = ax_pixels.plot([], [], label=str(pixel), color=np.random.rand(3,))
+                    ax_pixels.legend(loc="upper left", bbox_to_anchor=(1,1))
+                    # add (empty) data and Line2D to dict
+                    pixels_data[pixel] = {"times": [], "temps": [], "line": l}
+                # add values (temperature and time)
+                single = pixels_data[pixel]
+                single["times"].append(t)
+                single["temps"].append(val)
+                single["line"].set_data(single["times"], single["temps"])
+
+            # (if needed) update plot axes
+            if any(len(d["times"])>0 for d in pixels_data.values()):
+                xmax = max(max([d["times"] for d in pixels_data.values()]))
+                if xmax >= ax_pixels.get_xlim()[1]:
+                    ax_pixels.set_xlim(0, xmax*1.25)
+
+                ymin, ymax = ax_pixels.get_ylim()
+                new_min = min(min([d["temps"] for d in pixels_data.values()]))
+                new_max = max(max([d["temps"] for d in pixels_data.values()]))
+                pad = 0.1 * (new_max - new_min if new_max != new_min else 1)
+                new_min -= pad
+                new_max += pad
+
+                if new_min < ymin or new_max > ymax:
+                    ax_pixels.set_ylim(new_min, new_max)
+
+            pix_text.set_text(f"Number of current pixels: {len(current)}")
+            ax_pixels.figure.canvas.draw()
+            video.add_frame(fig)
+        except ValueError:
+            logger.warning(f"Received data has invalid format: {msg}")
+            pass
 
     if msg.topic == "/singlecameras/camera1/pixels/current":
         # get pixels the camera is already looking at
@@ -144,8 +210,8 @@ def on_message(client, userdata, msg):
 
     if msg.topic == "/singlecameras/camera1/area/current":
         # get area the camera is already looking at
-        area.handle_mqtt(msg.payload.decode(),ax)
-        area.draw_on(ax)
+        area.handle_mqtt(msg.payload.decode(),ax_img)
+        area.draw_on(ax_img)
 
 
 def on_click(event):
@@ -157,7 +223,7 @@ def on_click(event):
 
     global area, clicks, single_pixels
 
-    if not event.inaxes == ax:
+    if not event.inaxes == ax_img:
         # when the click is outside of the axes do nothing
         return
 
@@ -178,8 +244,8 @@ def on_click(event):
 
         if clicks.shape[0] == 2:
             area.get_from_click(clicks)    # get defined area
-            area.cleanup(ax) # remove drawing of previous area
-            area.draw_on(ax) # and draw current one
+            area.cleanup(ax_img) # remove drawing of previous area
+            area.draw_on(ax_img) # and draw current one
 
             # publish the selected area
             client.publish("/singlecameras/camera1/area", str(area))
@@ -200,11 +266,11 @@ client.connect(MQTT_SERVER, 1883, 60)
 
 
 cid = fig.canvas.mpl_connect('button_press_event', on_click)
-cursor = Cursor(ax, useblit=True, color='black', linewidth=1 )
+cursor = Cursor(ax_img, useblit=True, color='black', linewidth=1 )
 
-area_button = CheckButtons(plt.axes([0.45, 0.9, 0.3, 0.075]), ['Select area',],
+area_button = CheckButtons(plt.axes([0.4*0.45, 0.9, 0.4*0.3, 0.075]), ['Select area',],
                            [False,], check_props={'color':'red', 'linewidth':1})
-video_button = CheckButtons(plt.axes([0.1, 0.9, 0.3, 0.075]), ['Video',], [False,],
+video_button = CheckButtons(plt.axes([0.4*0.1, 0.9, 0.4*0.3, 0.075]), ['Video',], [False,],
                           check_props={'color':'green', 'linewidth':1})
 
 video_button.on_clicked(video_button_cb)
@@ -215,8 +281,8 @@ def reset_px_cb(event):
 def reset_a_cb(event):
     client.publish("/singlecameras/camera1/area/reset", "1")
 
-reset_pixels = Button(plt.axes([0.47, 0.02, 0.24, 0.075]), "Reset pixels")
-reset_area = Button(plt.axes([0.73, 0.02, 0.24, 0.075]), "Reset area")
+reset_pixels = Button(plt.axes([0.4*0.47, 0.02, 0.4*0.24, 0.075]), "Reset pixels")
+reset_area = Button(plt.axes([0.4*0.73, 0.02, 0.4*0.24, 0.075]), "Reset area")
 
 reset_pixels.on_clicked(reset_px_cb)
 reset_area.on_clicked(reset_a_cb)

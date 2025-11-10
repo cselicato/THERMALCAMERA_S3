@@ -8,7 +8,6 @@ from datetime import datetime
 import re
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Cursor
 from matplotlib.widgets import Button
 from matplotlib.widgets import CheckButtons
 import paho.mqtt.client as mqtt
@@ -59,6 +58,7 @@ cbar.minorticks_on()
 ax_pixels.set_xlabel("Time from start [s]")
 ax_pixels.set_ylabel("T [°C]")
 ax_pixels.grid()
+ax_pixels.margins(0.15)
 pix_text = data_fig.figure.text(0.45, 0.97, "Waiting for data...")
 
 # setup for visualization of area data
@@ -69,9 +69,9 @@ sc_min, = ax_area.plot([], [], color='blue', markersize=12, label=r"$T_{min}$")
 
 ax_area.set_xlabel("Time from start [s]")
 ax_area.set_ylabel("T [°C]")
-ax_area.set_xlim(0, 10)
 ax_area.grid()
-ax_area.legend(loc="upper left", bbox_to_anchor=(1,1))
+ax_area.margins(0.15)
+ax_area.legend(loc="upper left", bbox_to_anchor=(1,0.5))
 fig_text = fig.figure.text(0.45, 0.48, "Waiting for data...")
 
 pixels_data = {} # will contain the pixel as a key and as a value another dict
@@ -168,7 +168,6 @@ def on_message(client, userdata, msg):
             pass
 
     if msg.topic == "/singlecameras/camera1/pixels/data":
-
         try:
             logger.debug(f"Pixel data: {msg.payload.decode()}")
             # get current pixels and data from message
@@ -192,24 +191,10 @@ def on_message(client, userdata, msg):
                 single["temps"].append(val)
                 single["line"].set_data(single["times"], single["temps"])
 
-            # (if needed) update plot axes
-            if any(len(d["times"])>0 for d in pixels_data.values()):
-                xmax = max(max([d["times"] for d in pixels_data.values()]))
-                if xmax >= ax_pixels.get_xlim()[1]:
-                    ax_pixels.set_xlim(0, xmax*1.25)
-
-                ymin, ymax = ax_pixels.get_ylim()
-                new_min = min(min([d["temps"] for d in pixels_data.values()]))
-                new_max = max(max([d["temps"] for d in pixels_data.values()]))
-                pad = 0.1 * (new_max - new_min if new_max != new_min else 1)
-                new_min -= pad
-                new_max += pad
-
-                if new_min < ymin or new_max > ymax:
-                    ax_pixels.set_ylim(new_min, new_max)
-
+            # update plot axes
+            ax_pixels.relim()
+            ax_pixels.autoscale_view()
             pix_text.set_text(f"Number of current pixels: {len(current)}")
-            ax_pixels.figure.canvas.draw()
         except ValueError:
             logger.warning(f"Received data has invalid format: {msg}")
             pass
@@ -229,7 +214,7 @@ def on_message(client, userdata, msg):
             data = {k: float(v) if "." in v else int(v) for k, v in matches}
 
             x, y, w, h = data["x"], data["y"], data["w"], data["h"]
-            fig_text.set_text(f"Showing ({int(x)}, {int(y)}), w={int(w)} h={int(h)}")
+            fig_text.set_text(f"Area: ({int(x)}, {int(y)}), w={int(w)} h={int(h)}")
 
 
 
@@ -244,22 +229,10 @@ def on_message(client, userdata, msg):
                 sc_min.set_data(times, min_T)
                 sc_max.set_data(times, max_T)
 
-                if x >= ax_area.get_xlim()[1]:
-                    ax_area.set_xlim(0, x + 10)
-
-                ymin, ymax = ax_area.get_ylim()
-                new_min = min(*avg_T, *min_T, *max_T)
-                new_max = max(*avg_T, *min_T, *max_T)
-
-                pad = 0.1 * (new_max - new_min if new_max != new_min else 1)
-                new_min -= pad
-                new_max += pad
-
-                if new_min < ymin or new_max > ymax:
-                    ax_area.set_ylim(new_min, new_max)
-
-                ax_area.figure.canvas.draw()
-                video.add_frame(fig)
+                # update plot axes
+                ax_area.relim()
+                ax_area.autoscale_view()
+                video.add_frame(img_fig)
 
         except (TypeError, KeyError):
             logger.warning(f"Received data has invalid format: {msg}")
@@ -324,7 +297,6 @@ client.connect(MQTT_SERVER, 1883, 60)
 
 
 cid = fig.canvas.mpl_connect('button_press_event', on_click)
-cursor = Cursor(ax_img, useblit=True, color='black', linewidth=1 )
 
 area_button = CheckButtons(plt.axes([0.4*0.45, 0.9, 0.4*0.3, 0.075]), ['Select area',],
                            [False,], check_props={'color':'red', 'linewidth':1})

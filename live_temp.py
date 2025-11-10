@@ -20,14 +20,17 @@ xdata, ydata = [], []
 start_time = datetime.now()
 
 fig, ax = plt.subplots()
+plt.subplots_adjust(right=0.77)
 fig.set_size_inches(5, 4)
 scatter, = ax.plot([], [], color='red', markersize=12)
 ax.set_xlabel("Time from start [s]")
 ax.set_ylabel("T [°C]")
 ax.set_xlim(0, 10)
-ax.set_ylim(20, 30)
 ax.grid()
-fig_text = fig.figure.text(0.75, 0.9, "Waiting for data...")
+fig_text = fig.figure.text(0.55, 0.9, "Waiting for data...")
+
+pixels_data = {} # will contain the pixel as a key and as a value another dict
+                 #  with the times, values and Line2D 
 
 def on_connect(client, userdata, flags, reason_code, properties):
     """
@@ -54,41 +57,49 @@ def on_message(client, userdata, msg):
     if msg.topic == "/singlecameras/camera1/pixels/data":
         # Data is received as: 2 25 30.77,19 18 23.87,11 9 23.22
         try:
-            rc = list(map(str, msg.payload.decode().split(',')))
+            msg = msg.payload.decode()
+            # get current pixels and data from message
+            current = [list(map(float, p.split(' '))) for p in msg.split(",")]
+            t = (datetime.now() - start_time).total_seconds()
+            # TODO: it would probably be more useful with the UTC time on the x axis
 
-            current = np.empty((0, 3))
-            for i, pixel in enumerate(rc):
-                info = np.array(list(map(float, pixel.split(' '))))
-                current = np.append(current, [info], axis=0)
+            # now update value in dictionary or add new one if not present
+            for x, y, val in current:
+                pixel = (int(x), int(y))
+                if pixel not in pixels_data: # add to dict and make new line
+                    logger.info(f"Receiving new pixel: {pixel}")
+                    # create line for its data
+                    l, = ax.plot([], [], label=str(pixel), color=np.random.rand(3,))
+                    ax.legend(loc="upper left", bbox_to_anchor=(1,1))
+                    # add (empty) data and Line2D to dict
+                    pixels_data[pixel] = {"times": [], "temps": [], "line": l}
+                # add values (temperature and time)
+                single = pixels_data[pixel]
+                single["times"].append(t)
+                single["temps"].append(val)
+                single["line"].set_data(single["times"], single["temps"])
 
-            fig_text.set_text(f"Showing {int(current[0][0])}, {int(current[0][1])}")
-            value = current[0][2]
+            # (if needed) update plot axes
+            if any(len(d["times"])>0 for d in pixels_data.values()):
+                xmax = max(max([d["times"] for d in pixels_data.values()]))
+                if xmax >= ax.get_xlim()[1]:
+                    ax.set_xlim(0, xmax*1.25)
 
-            x = (datetime.now() - start_time).total_seconds()
-            xdata.append(x)
-            ydata.append(value)
+                ymin, ymax = ax.get_ylim()
+                new_min = min(min([d["temps"] for d in pixels_data.values()]))
+                new_max = max(max([d["temps"] for d in pixels_data.values()]))
+                pad = 0.1 * (new_max - new_min if new_max != new_min else 1)
+                new_min -= pad
+                new_max += pad
 
-            # plot has to be updated in the callback (so when data is received)
-            scatter.set_data(xdata, ydata)
+                if new_min < ymin or new_max > ymax:
+                    ax.set_ylim(new_min, new_max)
 
-            if x >= ax.get_xlim()[1]:
-                ax.set_xlim(0, x + 10)
-
-            ymin, ymax = ax.get_ylim()
-            new_min = min(ydata)
-            new_max = max(ydata)
-
-            pad = 0.1 * (new_max - new_min if new_max != new_min else 1)
-            new_min -= pad
-            new_max += pad
-
-            if new_min < ymin or new_max > ymax:
-                ax.set_ylim(new_min, new_max)
-
+            fig_text.set_text(f"Received {len(current)} pixels at t={t:.1f}s")
             ax.figure.canvas.draw()
             video.add_frame(fig)
         except ValueError:
-            logger.warning(f"Received data has invalid format: {msg.payload}")
+            logger.warning(f"Received data has invalid format: {msg}")
             pass
 
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)

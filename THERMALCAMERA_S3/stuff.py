@@ -129,6 +129,14 @@ class InterestingArea:
     def __init__(self):
         self.a = np.empty((0, 4),dtype=int)
 
+    def __str__(self):
+        """
+        Implemented to make publishing easier: it has to be formatted as
+        "x_left y_low w h"
+        """
+
+        return f"{self.a[0][0]} {self.a[0][1]} {self.a[0][2]} {self.a[0][3]}" # it's a bit ugly
+
     def cleanup(self, axes):
         """
         Delete area drawing from axes
@@ -218,12 +226,4 @@ class InterestingArea:
             h = MAX_Y+1-y_low
         
         self.a = np.array([(x_left, y_low, w, h)], dtype=int)
-
-    def __str__(self):
-        """
-        Implemented to make publishing easier: it has to be formatted as
-        "x_left y_low w h"
-        """
-
-        return f"{self.a[0][0]} {self.a[0][1]} {self.a[0][2]} {self.a[0][3]}" # it's a bit ugly
     

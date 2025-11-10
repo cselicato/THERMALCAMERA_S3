@@ -21,17 +21,17 @@ t, avg_T, max_T, min_T = [], [], [], []
 start_time = datetime.now()
 
 fig, ax = plt.subplots()
-sc_avg, = ax.plot([], [], color='green', markersize=12, label="Average T")
-sc_max, = ax.plot([], [], color='red', markersize=12, label="Max T")
-sc_min, = ax.plot([], [], color='blue', markersize=12, label="Min T")
+plt.subplots_adjust(right=0.77)
+sc_avg, = ax.plot([], [], color='green', markersize=12, label=r"$T_{avg}$")
+sc_max, = ax.plot([], [], color='red', markersize=12, label=r"$T_{max}$")
+sc_min, = ax.plot([], [], color='blue', markersize=12, label=r"$T_{min}$")
 fig.set_size_inches(5, 4)
 
 ax.set_xlabel("Time from start [s]")
 ax.set_ylabel("T [°C]")
 ax.set_xlim(0, 10)
-ax.set_ylim(20, 30)
 ax.grid()
-ax.legend()
+ax.legend(loc="upper left", bbox_to_anchor=(1,1))
 fig_text = fig.figure.text(0.55, 0.9, "Waiting for data...")
 
 def on_connect(client, userdata, flags, reason_code, properties):
@@ -99,7 +99,7 @@ def on_message(client, userdata, msg):
                 video.add_frame(fig)
 
         except (TypeError, KeyError):
-            logger.warning(f"Received data has invalid format: {msg.payload}")
+            logger.warning(f"Received data has invalid format: {msg}")
             pass
 
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)

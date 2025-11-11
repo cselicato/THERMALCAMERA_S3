@@ -4,8 +4,9 @@
 
 import struct
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
+import threading
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
@@ -33,6 +34,8 @@ logger.remove(0)
 logger.add(sys.stderr, filter=level_filter(["WARNING", "INFO"]))
 
 start_time = datetime.now()
+max_dead_time = timedelta(seconds=4) # in seconds
+last_received = datetime.now()-timedelta(seconds=10)
 
 fig = plt.figure(figsize=(10, 5))
 gs = fig.add_gridspec(1, 2, width_ratios=[0.4, 0.6], wspace=0.15)
@@ -138,7 +141,34 @@ def on_message(client, userdata, msg):
     Define what happens when a MQTT message is received
     """
 
-    global im, single_pixels, area, received, times, avg_T, max_T, min_T
+    global im, single_pixels, area, received, last_received, panel
+
+    last_received = datetime.now()
+
+
+    if msg.topic == "/singlecameras/camera1/settings/current":
+        logger.info("Received camera settings")
+        # get the current camera settings
+        # they are received as rate: 8.00 shift: 8.00 emissivity: 0.95 mode: 1
+        logger.debug(msg.payload)
+        try:
+            st_settings = msg.payload.decode()
+            pattern_set = r'(\w+):\s(\d+(?:\.\d+)?)'
+            matches_set = re.findall(pattern_set, st_settings)
+            logger.debug(matches_set)
+
+            # Convert to dictionary
+            # current_set = {k: float(v) if "." in v else int(v) for k, v in matches_set}
+            current_set = {k: float(v) for k, v in matches_set}
+
+            panel.rate.set_text(current_set["rate"])
+            panel.shift.set_text(current_set["shift"])
+            panel.emissivity.set_text(current_set["emissivity"])
+            panel.fig.canvas.draw()
+
+        except (ValueError, KeyError):
+            logger.warning(f"Received settings have invalid format: {msg.payload}")
+
 
     # an image is recieved from the sensor: plot the image and, if video
     # button is clicked, add frame to video
@@ -317,16 +347,16 @@ def reset_px_cb(event):
 def reset_a_cb(event):
     client.publish("/singlecameras/camera1/area/reset", "1")
 
-# reset_pixels = Button(plt.axes([0.4*0.47, 0.02, 0.4*0.24, 0.075]), "Reset pixels")
-# reset_area = Button(plt.axes([0.4*0.73, 0.02, 0.4*0.24, 0.075]), "Reset area")
-
-# reset_pixels.on_clicked(reset_px_cb)
-# reset_area.on_clicked(reset_a_cb)
-
 panel = ControlPanel()
 settings = CameraSettings()
 panel.reset_pixels.on_clicked(reset_px_cb)
 panel.reset_area.on_clicked(reset_a_cb)
+
+def info_cb(event):
+    client.publish("/singlecameras/camera1/info_request", "1")
+    logger.info("Sending request to AtomS3")
+
+panel.get_info.on_clicked(info_cb)
 
 def set_rate(expression):
 
@@ -339,7 +369,6 @@ def set_rate(expression):
         else:
             nearest = min(allowed, key=lambda x: abs(x - val))
             settings.set_rate(nearest)
-
             print(f"Refresh rate set to nearest valid value: {nearest} Hz")
     except ValueError:
         print("Invalid input for refresh rate: it must be a number.")
@@ -356,9 +385,11 @@ def set_shift(expression):
 def set_em(expression):
     try:
         em = float(expression)
-        if 0. < em < 1.:
+        if 0. < em <= 1.:
+            panel.emissivity_box.text_disp.set_color('black')
             settings.set_em(em)
         else:
+            panel.emissivity_box.text_disp.set_color('red')
             print(f"Invalid emissivity: it must be between 0 and 1.")
     except ValueError:
         print("Invalid input for emissivity: it must be a number between 0 and 1.")
@@ -370,7 +401,28 @@ panel.emissivity_box.on_submit(set_em)
 
 def apply_set(event):
     print(settings.publish_form())
-    print("Now i would send over the settings")
+    client.publish("/singlecameras/camera1/settings", settings.publish_form())
+
+
+def update_status():
+    if datetime.now()-last_received<max_dead_time:
+        panel.state.set_text("ONLINE")
+        panel.state.set_color("green")
+        bbox = panel.state.get_bbox_patch()
+        bbox.set_facecolor((0.8, 1.0, 0.8))  # light green
+        bbox.set_edgecolor((0.5, 1.0, 0.5))  # green border
+    else:
+        panel.state.set_text("OFFLINE")
+        panel.state.set_color("red")
+        bbox = panel.state.get_bbox_patch()
+        bbox.set_facecolor((1.0, 0.8, 0.8))  # light red (soft pinkish fill)
+        bbox.set_edgecolor((1.0, 0.5, 0.5))  # red border
+
+    panel.fig.canvas.draw()
+
+timer = panel.fig.canvas.new_timer(interval=500)
+timer.add_callback(update_status)
+timer.start()
 
 def reset_set(event):
     print("Now i would send over the default setting")
@@ -379,8 +431,9 @@ panel.apply_settings.on_clicked(apply_set)
 panel.reset_settings.on_clicked(reset_set)
 
 def mode_changed(label):
-    if label == 'Chess pattern':
+    settings.set_readout(label)
 
+    if label == 'Chess pattern':
         print(label)
     elif label == 'TV interleave':
         print(label)

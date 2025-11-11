@@ -16,16 +16,24 @@ const char* client_name = "AtomS3ThermalCamera";
 
 const char* pixel_fname = "/M5Stack/pixels.txt";
 const char* area_fname  = "/M5Stack/area.txt";
+const char* settings_fname  = "/M5Stack/cam_settings.txt";
 
 #define MSG_BUFFER_SIZE (1000*4)
 char msg[MSG_BUFFER_SIZE];
-int value = 0;
+
+String current_pix;
+String current_area;
+String current_settings;
 
 #include "MLX90640_API.h"
 #include "MLX90640_I2C_Driver_ATOMS3.h"
 
 const byte MLX90640_address = 0x33; //Default 7-bit unshifted address of the MLX90640
-#define TA_SHIFT 8  //Default shift for MLX90640 in open air 
+// #define TA_SHIFT 8  //Default shift for MLX90640 in open air
+float emissivity = 0.95;
+float TA_SHIFT = 8.0;
+uint8_t rate_setting = 2;
+byte readout_mode = 0; 
 
 #define COLS   32
 #define ROWS   24
@@ -112,8 +120,31 @@ void callback(char* topic, byte* payload, unsigned int length) {
     for (int i=0;i<length;i++) {
       message+=(char)payload[i];
     }
-   Serial.print("Mqtt command:");
-   Serial.println(message);
+    Serial.print("Mqtt command:");
+    Serial.println(message);
+
+    if(strcmp(topic, "/singlecameras/camera1/settings") == 0){
+        // write camera settings to file (previous one is overwritten)
+        File currentSet = SPIFFS.open(settings_fname,"w");
+        currentSet.printf(message.c_str());
+        currentSet.close();
+        client.publish("/singlecameras/camera1/settings/check", "received settings");
+        delay(200);
+
+        ESP.restart();
+    }
+
+    if(strcmp(topic, "/singlecameras/camera1/info_request") == 0){
+        // publish settings, pixels and area
+        client.publish("/singlecameras/camera1/pixels/current", current_pix.c_str(), true);
+        client.publish("/singlecameras/camera1/area/current", current_area.c_str(), true);
+        client.publish("/singlecameras/camera1/settings/current", current_settings.c_str(), true);
+        Serial.println("Received request for info, sending:");
+        Serial.println(current_settings.c_str());
+        Serial.println(current_area.c_str()); // TODO: it does not work
+        Serial.println(current_pix.c_str()); // TODO: it does not work
+    }
+    
 
     if(strcmp(topic, "/singlecameras/camera1/pixels/coord") == 0){
         // get x and y coordinate of the desired pixel and add them to single_pixels
@@ -155,8 +186,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
                     oss << ",";}
             }
 
-            std::string current = oss.str();
-            client.publish("/singlecameras/camera1/pixels/current", current.c_str(), true);
+            current_pix = oss.str().c_str();
+            client.publish("/singlecameras/camera1/pixels/current", current_pix.c_str(), true);
         }
     }
 
@@ -188,7 +219,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
                 area.push_back(rc[i]);
             }
             // publish current area as persistent message
-            client.publish("/singlecameras/camera1/area/current", message.c_str(), true);
+            current_area = message;
+            client.publish("/singlecameras/camera1/area/current", current_area.c_str(), true);
             // write area to file (previous one must be overwritten)
             File currentArea = SPIFFS.open(area_fname,"w");
             if (currentArea) {
@@ -215,6 +247,8 @@ void reconnect(){
     M5.Display.setCursor(5, 5);
     M5.Display.printf("Connecting to MQTT...");
     if (client.connect(client_name)) {
+    client.subscribe("/singlecameras/camera1/settings");
+    client.subscribe("/singlecameras/camera1/info_request");
     client.subscribe("/singlecameras/camera1/area");
     client.subscribe("/singlecameras/camera1/area/reset");
     client.subscribe("/singlecameras/camera1/pixels/coord");
@@ -250,17 +284,16 @@ void setup() {
     Serial.println("ATOMS3 MLX90640 IR Camera"); 
     M5.Display.setTextSize(1);
 
-    // Initialize MLX90640 sensor
-    int status;
-    uint16_t eeMLX90640[832];
-    status = MLX90640_DumpEE(MLX90640_address, eeMLX90640);
-    if (status != 0) Serial.println("Failed to load system parameters");
 
-    status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640);
-    if (status != 0) Serial.println("Parameter extraction failed");
 
-    // MLX90640_SetRefreshRate(MLX90640_address, 0x02);    // set rate to 2 Hz (0.5 Hz-64 Hz)
-    MLX90640_SetRefreshRate(MLX90640_address, 0x03);    // set rate to 4 Hz
+    // start SPIFFS
+    if (SPIFFS.begin()) {  // Start SPIFFS, return 1 on success.
+        M5.Display.println("SPIFFS begin.");
+    } else { // Initialize the SPIFFS
+        M5.Display.println("\nSPIFFS format start...");
+        SPIFFS.format();    // Formatting SPIFFS.
+        M5.Display.println("SPIFFS format finish");
+    }
 
     // Connect to wifi
     M5.Display.print("\nConnecting WiFi...\n");
@@ -277,18 +310,71 @@ void setup() {
     client.setServer(mqtt_server, 1883);    // default unencrypted MQTT port is 1883
     client.setCallback(callback); 
     client.setBufferSize(256+4*768);
-    
+    delay(1000);    // wait 1 s
 
-    // start SPIFFS
-    if (SPIFFS.begin()) {  // Start SPIFFS, return 1 on success.
-        M5.Display.println("SPIFFS begin.");
-    } else { // Initialize the SPIFFS
-        M5.Display.println("\nSPIFFS format start...");
-        SPIFFS.format();    // Formatting SPIFFS.
-        M5.Display.println("SPIFFS format finish");
+    reconnect();
+
+    // recover camera settings from file
+    File file_set = SPIFFS.open(settings_fname, "r");
+    if (!file_set) {   // if no file is found, create one with  defaults
+        File file_set = SPIFFS.open(settings_fname,"w");  // Create file object to write information
+        file_set.printf("%d\n%.1f\n%.2f\n%d\n", rate_setting, TA_SHIFT, emissivity, readout_mode);
+        file_set.close();
+        client.publish("/singlecameras/camera1/settings/check", "Creating empty file");
+
+    }
+    else { // read file line by line
+        Serial.println("Reading settings file...");
+        std::vector<String> lines;
+        while (file_set.available()) {
+            String line = file_set.readStringUntil('\n');
+            line.trim();
+            if (line.length() > 0) lines.push_back(line);
+        }
+        file_set.close();
+
+        if (lines.size() >= 4) {
+            rate_setting = (uint8_t) lines[0].toInt();
+            TA_SHIFT     = lines[1].toFloat();
+            emissivity   = lines[2].toFloat();
+            readout_mode = lines[3].toInt();
+        }
+        float rate_hz = pow(2, rate_setting - 1);
+        current_settings = "rate: " + String(rate_hz) +
+                 " shift: " + String(TA_SHIFT) +
+                 " emissivity: " + String(emissivity) +
+                 " mode: " + String(readout_mode);
+        Serial.println(current_settings);
+        client.publish("/singlecameras/camera1/settings/current", current_settings.c_str(), true);        
+        // Serial.printf("Loaded settings:\n Rate: %d\n TA_SHIFT: %.2f\n Emissivity: %.2f\n Mode: %d\n",
+                    //   rate_setting, TA_SHIFT, emissivity, readout_mode);
+        client.publish("/singlecameras/camera1/settings/check", "end of parsing setting file");
     }
 
-    delay(1000);    // wait 1 s
+
+    // Initialize MLX90640 sensor
+    int status;
+    uint16_t eeMLX90640[832];
+    status = MLX90640_DumpEE(MLX90640_address, eeMLX90640);
+    if (status != 0) Serial.println("Failed to load system parameters");
+
+    status = MLX90640_ExtractParameters(eeMLX90640, &mlx90640);
+    if (status != 0) Serial.println("Parameter extraction failed");
+
+    // MLX90640_SetRefreshRate(MLX90640_address, 0x02);    // set rate to 2 Hz (0.5 Hz-64 Hz)
+    // MLX90640_SetRefreshRate(MLX90640_address, 0x03);    // set rate to 4 Hz
+
+    MLX90640_SetRefreshRate(MLX90640_address, rate_setting);
+    Serial.println(rate_setting);
+    if (readout_mode == 0){
+        MLX90640_SetChessMode(MLX90640_address);
+        Serial.println("Setting chess mode");
+    }
+    else{
+        MLX90640_SetInterleavedMode(MLX90640_address);
+        Serial.println("Setting interleaved mode");
+    }
+
 
     // recover pixel coordinates from file
     File file_pixels = SPIFFS.open(pixel_fname, "r");
@@ -315,6 +401,20 @@ void setup() {
             single_pixels.push_back({x, y});
         }
     }
+    std::ostringstream oss;
+    for (int i=0; i<single_pixels.size(); i++){
+        std::vector<int> pair = single_pixels[i];
+        if (pair.size() == 2){
+            oss << pair[0]<<' '<<pair[1];
+        }
+        else {
+            Serial.println("Found invalid coordinates in single_pixels vector (dimensions !=2) :(");
+        }
+        if (i!=single_pixels.size()-1){
+            oss << ",";}
+    }
+
+    current_pix = oss.str().c_str();
 
     // recover area from file
     File file_area = SPIFFS.open(area_fname, "r");
@@ -330,6 +430,16 @@ void setup() {
         }
     }
 
+    std::ostringstream a_oss;
+    for (int i=0; i<area.size(); i++){
+        if (i==area.size()-1){
+            a_oss << area[i];
+        }
+        else{
+            a_oss << area[i]<<' ';
+        }
+    }
+    current_area = a_oss.str().c_str();
     // Setup display to show image and info
     M5.Display.fillScreen(TFT_BLACK);
     infodisplay();
@@ -345,6 +455,8 @@ void loop() {
     loopTime = millis();
     startTime = loopTime;
     
+    client.publish("/singlecameras/camera1/pixels/connected", "1");
+
     // Long press button for power off (hold for 3 seconds)
     if (M5.BtnA.pressedFor(3000)) {
         M5.Display.fillScreen(TFT_BLACK);
@@ -360,7 +472,8 @@ void loop() {
         single_pixels.clear();
         File emptyFile = SPIFFS.open(pixel_fname,"w");  // Create aFile object to write information
         emptyFile.close();  // Close the file when writing is complete.
-        client.publish("/singlecameras/camera1/pixels/current", "none", true);
+        current_pix = "none";
+        client.publish("/singlecameras/camera1/pixels/current", current_pix.c_str(), true);
     }
 
     if (reset_area){
@@ -368,7 +481,8 @@ void loop() {
         area.clear();
         File emptyFile = SPIFFS.open(area_fname,"w");  // Create aFile object to write information
         emptyFile.close();  // Close the file when writing is complete.
-        client.publish("/singlecameras/camera1/area/current", "none", true);
+        current_area = "none";
+        client.publish("/singlecameras/camera1/area/current", current_area.c_str(), true);
     }
     
     // Read thermal data
@@ -383,7 +497,6 @@ void loop() {
         float vdd = MLX90640_GetVdd(mlx90640Frame, &mlx90640);
         float Ta = MLX90640_GetTa(mlx90640Frame, &mlx90640);
         float tr = Ta - TA_SHIFT;   //Reflected temperature based on the sensor ambient temperature
-        float emissivity = 0.95;
         MLX90640_CalculateTo(mlx90640Frame, &mlx90640, emissivity, tr, pixels);
         
         int mode_ = MLX90640_GetCurMode(MLX90640_address);
@@ -485,8 +598,6 @@ void loop() {
     // MQTT publishing
     client.connect(client_name);
     bool r = client.publish("/singlecameras/camera1/image", (byte *) pixels, 4*768); 
-    Serial.println(r);
-    M5.Display.println(r);
     client.publish("/singlecameras/camera1/check", r?"ok":"ko");
     String jsonPayload = String("{\"tmax\":") + String(max_v) + ",\"tmin\":" + String(min_v) + ",\"tavg\":" + String(avg_v) + "}";
     client.publish("/singlecameras/camera1/temps", jsonPayload.c_str());
@@ -556,7 +667,6 @@ String area_data(std::vector<int> a, float values[COLS * ROWS]){
         w = a[2];
         h = a[3];
         out_msg = "max: "+String(max)+" min: "+String(min)+" avg: "+String(avg)+" x: "+String(x)+" y: "+String(y)+" w: "+String(w)+" h: "+String(h);
-        Serial.printf("Number of pixels in area: %i ",w*h);
     }
 
     return out_msg;

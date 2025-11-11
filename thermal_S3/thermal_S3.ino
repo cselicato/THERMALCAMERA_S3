@@ -141,8 +141,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
         client.publish("/singlecameras/camera1/settings/current", current_settings.c_str(), true);
         Serial.println("Received request for info, sending:");
         Serial.println(current_settings.c_str());
-        Serial.println(current_area.c_str()); // TODO: it does not work
-        Serial.println(current_pix.c_str()); // TODO: it does not work
+        Serial.println(current_area.c_str());
+        Serial.println(current_pix.c_str());
     }
     
 
@@ -401,21 +401,26 @@ void setup() {
             single_pixels.push_back({x, y});
         }
     }
-    std::ostringstream oss;
-    for (int i=0; i<single_pixels.size(); i++){
-        std::vector<int> pair = single_pixels[i];
-        if (pair.size() == 2){
-            oss << pair[0]<<' '<<pair[1];
+
+    if (single_pixels.size()!=0){
+        std::ostringstream oss;
+        for (int i=0; i<single_pixels.size(); i++){
+            std::vector<int> pair = single_pixels[i];
+            if (pair.size() == 2){
+                oss << pair[0]<<' '<<pair[1];
+            }
+            else {
+                Serial.println("Found invalid coordinates in single_pixels vector (dimensions !=2) :(");
+            }
+            if (i!=single_pixels.size()-1){
+                oss << ",";}
         }
-        else {
-            Serial.println("Found invalid coordinates in single_pixels vector (dimensions !=2) :(");
-        }
-        if (i!=single_pixels.size()-1){
-            oss << ",";}
+
+        current_pix = oss.str().c_str();
     }
-
-    current_pix = oss.str().c_str();
-
+    else {
+        current_pix = "none";
+    }
     // recover area from file
     File file_area = SPIFFS.open(area_fname, "r");
     if (!file_area) {   // if no file is found, create an empty one
@@ -429,7 +434,7 @@ void setup() {
             area.push_back(line.toInt());
         }
     }
-
+    if (area.size()!=0){
     std::ostringstream a_oss;
     for (int i=0; i<area.size(); i++){
         if (i==area.size()-1){
@@ -440,6 +445,10 @@ void setup() {
         }
     }
     current_area = a_oss.str().c_str();
+    }
+    else {
+        current_area = "none";
+    }
     // Setup display to show image and info
     M5.Display.fillScreen(TFT_BLACK);
     infodisplay();
@@ -574,7 +583,7 @@ void loop() {
         draw_crosshair(48, 64, TFT_WHITE);
 
         // Draw crosshair at single pixel
-        draw_crosshair(single_pixel[0]*4, single_pixel[1]*4, TFT_BLACK); // TODO: check consistency of coordinate systems
+        draw_crosshair(single_pixel[0]*4, single_pixel[1]*4, TFT_BLACK);
         M5.Display.setCursor(98, 5);
         M5.Display.setTextColor(TFT_WHITE);
         M5.Display.printf("%d-%d", MINTEMP, MAXTEMP); // update max/min temperature info shown on display

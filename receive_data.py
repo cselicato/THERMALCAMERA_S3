@@ -6,12 +6,9 @@ import struct
 import sys
 from datetime import datetime, timedelta
 import re
-import threading
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Button
 from matplotlib.widgets import CheckButtons
-from matplotlib.widgets import TextBox
 import paho.mqtt.client as mqtt
 from loguru import logger
 
@@ -75,7 +72,7 @@ ax_area.margins(0.15)
 fig_text = fig.figure.text(0.45, 0.48, "Waiting for data...")
 
 pixels_data = {} # will contain the pixel as a key and as a value another dict
-                 #  with the times, values and Line2D 
+                 #  with the times, values and Line2D
 
 area_data = {} # will contain the area as a key and as a value another dict
                #  with the times, values and Line2D (even though only one area at the time is defined)
@@ -188,14 +185,9 @@ def on_message(client, userdata, msg):
             fig.canvas.draw() # draw canvas
 
             video.add_frame(img_fig)
-        except struct.error:
+        except (struct.error, ValueError):
             logger.warning("Received invalid image")
             logger.debug(f"Invalid img: {msg.payload}")
-            pass
-        except ValueError:
-            logger.warning("Received invalid image")
-            logger.debug(f"Invalid img: {msg.payload}")
-            pass
 
     if msg.topic == "/singlecameras/camera1/pixels/data":
         try:
@@ -226,7 +218,6 @@ def on_message(client, userdata, msg):
             pix_text.set_text(f"Number of current pixels: {len(current)}")
         except ValueError:
             logger.warning(f"Received data has invalid format: {msg.payload}")
-            pass
 
     if msg.topic == "/singlecameras/camera1/pixels/current":
         # get pixels the camera is already looking at
@@ -264,16 +255,14 @@ def on_message(client, userdata, msg):
                 a["max"].append(data["max"])
                 a["l_avg"].set_data(a["times"], a["avg"])
                 a["l_min"].set_data(a["times"], a["min"])
-                a["l_max"].set_data(a["times"], a["max"])                
-                
+                a["l_max"].set_data(a["times"], a["max"])
+
                 # update plot axes
                 ax_area.relim()
                 ax_area.autoscale_view()
 
         except (TypeError, KeyError):
             logger.warning(f"Received data has invalid format: {msg.payload}")
-            pass
-
 
     if msg.topic == "/singlecameras/camera1/area/current":
         # get area the camera is already looking at
@@ -375,7 +364,7 @@ def set_rate(expression):
     print(expression)
 
 def set_shift(expression):
-    # TODO: I have no idea of the allowed range for this parameter 
+    # TODO: I have no idea of the allowed range for this parameter
     try:
         settings.set_shift(int(expression))
     except ValueError:

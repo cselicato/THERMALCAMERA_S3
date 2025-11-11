@@ -10,12 +10,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 from matplotlib.widgets import CheckButtons
+from matplotlib.widgets import TextBox
 import paho.mqtt.client as mqtt
 from loguru import logger
 
 from THERMALCAMERA_S3.videomaker import VideoMaker
 from THERMALCAMERA_S3.stuff import InterestingArea
 from THERMALCAMERA_S3.stuff import InterestingPixels
+from THERMALCAMERA_S3.controlpanel import ControlPanel
+from THERMALCAMERA_S3.controlpanel import CameraSettings
 
 
 MQTT_SERVER = "test.mosquitto.org"
@@ -214,17 +217,17 @@ def on_message(client, userdata, msg):
 
             if (data["max"] and data["min"] and data["avg"]): # values should be appended only if they are all present
                 x = (datetime.now() - start_time).total_seconds()
-                if str(area) not in area_data:
+                if str(area.a) not in area_data:
                     # create 2DLine for min, max and avg
                     l_avg, = ax_area.plot([], [], color='green', markersize=12, label=r"$T_{avg}$")
                     l_min, = ax_area.plot([], [], color='blue', markersize=12, label=r"$T_{min}$")
                     l_max, = ax_area.plot([], [], color='red', markersize=12, label=r"$T_{max}$")
                     if not hasattr(ax_area, "_legend"):
                         ax_area.legend(loc="upper left", bbox_to_anchor=(1,0.5))
-                    area_data[str(area)] = {"times" : [], "avg" : [], "min" : [], "max" : [],
+                    area_data[str(area.a)] = {"times" : [], "avg" : [], "min" : [], "max" : [],
                                             "l_avg" : l_avg, "l_min" : l_min, "l_max" : l_max}
                 # only the currently defined area data is getting updated
-                a = area_data[str(area)]
+                a = area_data[str(area.a)]
                 a["times"].append(x)
                 a["avg"].append(data["avg"])
                 a["min"].append(data["min"])
@@ -270,8 +273,7 @@ def on_click(event):
         clicks = np.append(clicks, [(x, y)], axis=0)
 
         if clicks.shape[0]>2:   # reset area with more than two clicks
-            print("Click again to redefine area") # NOTE: making the area disappear is misleading
-                                                  # because it is not being resetted
+            print("Click again to redefine area")
             clicks = np.empty((0, 2), dtype=int)
 
         draw_clicks.set_data(clicks[:,0],clicks[:,1])
@@ -284,6 +286,7 @@ def on_click(event):
             # publish the selected area
             client.publish("/singlecameras/camera1/area", str(area))
             print("The selected area is ",str(area))
+            draw_clicks.set_data([],[]) # remove cliks from image
 
     else:
         # if area button is not clicked get point coordinates and publish them
@@ -314,11 +317,75 @@ def reset_px_cb(event):
 def reset_a_cb(event):
     client.publish("/singlecameras/camera1/area/reset", "1")
 
-reset_pixels = Button(plt.axes([0.4*0.47, 0.02, 0.4*0.24, 0.075]), "Reset pixels")
-reset_area = Button(plt.axes([0.4*0.73, 0.02, 0.4*0.24, 0.075]), "Reset area")
+# reset_pixels = Button(plt.axes([0.4*0.47, 0.02, 0.4*0.24, 0.075]), "Reset pixels")
+# reset_area = Button(plt.axes([0.4*0.73, 0.02, 0.4*0.24, 0.075]), "Reset area")
 
-reset_pixels.on_clicked(reset_px_cb)
-reset_area.on_clicked(reset_a_cb)
+# reset_pixels.on_clicked(reset_px_cb)
+# reset_area.on_clicked(reset_a_cb)
+
+panel = ControlPanel()
+settings = CameraSettings()
+panel.reset_pixels.on_clicked(reset_px_cb)
+panel.reset_area.on_clicked(reset_a_cb)
+
+def set_rate(expression):
+
+    try:
+        val = float(expression)
+        allowed = [0.5, 1, 2, 4, 8, 16, 32, 64]
+        if val in allowed:
+            settings.set_rate(val)
+            print(f"Refresh rate set to {val} Hz")
+        else:
+            nearest = min(allowed, key=lambda x: abs(x - val))
+            settings.set_rate(nearest)
+
+            print(f"Refresh rate set to nearest valid value: {nearest} Hz")
+    except ValueError:
+        print("Invalid input for refresh rate: it must be a number.")
+    print(expression)
+
+def set_shift(expression):
+    # TODO: I have no idea of the allowed range for this parameter 
+    try:
+        settings.set_shift(int(expression))
+    except ValueError:
+        print("Invalid input for shift: it must be a number.")
+    print(expression)
+
+def set_em(expression):
+    try:
+        em = float(expression)
+        if 0. < em < 1.:
+            settings.set_em(em)
+        else:
+            print(f"Invalid emissivity: it must be between 0 and 1.")
+    except ValueError:
+        print("Invalid input for emissivity: it must be a number between 0 and 1.")
+    print(expression)
+
+panel.rate_box.on_submit(set_rate)
+panel.shift_box.on_submit(set_shift)
+panel.emissivity_box.on_submit(set_em)
+
+def apply_set(event):
+    print(settings.publish_form())
+    print("Now i would send over the settings")
+
+def reset_set(event):
+    print("Now i would send over the default setting")
+
+panel.apply_settings.on_clicked(apply_set)
+panel.reset_settings.on_clicked(reset_set)
+
+def mode_changed(label):
+    if label == 'Chess pattern':
+
+        print(label)
+    elif label == 'TV interleave':
+        print(label)
+
+panel.mode_selector.on_clicked(mode_changed)
 
 try:
     client.loop_start()

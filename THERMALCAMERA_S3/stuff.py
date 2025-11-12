@@ -142,12 +142,13 @@ class InterestingPixels:
         return f"{self.p[-1][0]} {self.p[-1][1]}"
 
 
-    def get_data(self, msg, ax, t):
+    def update_data(self, msg, ax, t):
         """
         Get pixel(s) data from message
         """
-        # logger.debug(msg)
+
         try:
+            logger.debug(msg)
             # get current pixels and data from message
             current = [list(map(float, p.split(' '))) for p in msg.split(",")]
             t = (datetime.now() - t).total_seconds()
@@ -298,7 +299,7 @@ class InterestingArea:
         
         self.a = np.array([(x_left, y_low, w, h)], dtype=int)
 
-    def get_data(self, msg, ax, t):
+    def update_data(self, msg, ax, t):
         """
         Get area data from message
         """

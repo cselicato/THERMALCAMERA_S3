@@ -12,6 +12,7 @@ from matplotlib.widgets import CheckButtons
 import paho.mqtt.client as mqtt
 from loguru import logger
 
+from THERMALCAMERA_S3 import THERMALCAMERA_S3_DATA
 from THERMALCAMERA_S3.videomaker import VideoMaker
 from THERMALCAMERA_S3.stuff import InterestingArea
 from THERMALCAMERA_S3.stuff import InterestingPixels
@@ -31,8 +32,10 @@ logger.remove(0)
 logger.add(sys.stderr, filter=level_filter(["WARNING", "DEBUG"]))
 
 save_file = True
-f_pix = open('pix_data.txt','w')
-f_area = open('area_data.txt','w')
+time = datetime.now().strftime("%Y%m%d_%H%M%S")
+if save_file:
+    f_pix = open(THERMALCAMERA_S3_DATA / f"pix_{time}.txt",'w', encoding="utf-8")
+    f_area = open(THERMALCAMERA_S3_DATA / f"area_{time}.txt",'w', encoding="utf-8")
 
 start_time = datetime.now()
 max_dead_time = timedelta(seconds=4) # in seconds
@@ -43,6 +46,9 @@ gs = fig.add_gridspec(1, 2, width_ratios=[0.4, 0.6], wspace=0.15)
 # create subfigures
 img_fig = fig.add_subfigure(gs[0])
 data_fig = fig.add_subfigure(gs[1])
+# get dimensions of fig part that contains the image (only useful part to film)
+box = img_fig.bbox
+img_dim = (box.x0, fig.bbox.height - box.y1, box.width, box.height)
 # get axes
 ax_img = img_fig.subplots()
 # create subplots for pixels data and adjust spacing
@@ -82,7 +88,7 @@ draw_clicks, = ax_img.plot([], [], marker='+', color='blue', markersize=12, line
 clicks = np.empty((0, 2), dtype=int)    # array for mouse clicks to define area
 received = 0    # counter for how many thermal images have been received
 
-video = VideoMaker("display")
+video = VideoMaker()
 
 area = InterestingArea()
 single_pixels = InterestingPixels()
@@ -136,7 +142,7 @@ def on_message(client, userdata, msg):
     Define what happens when a MQTT message is received
     """
 
-    global im, single_pixels, area, received, last_received, panel
+    global im, img_fig, single_pixels, area, received, last_received, panel
 
     if msg.topic == "/singlecameras/camera1/settings/current":
         logger.info("Received camera settings")
@@ -165,7 +171,8 @@ def on_message(client, userdata, msg):
     if msg.topic == "/singlecameras/camera1/image":
         last_received = datetime.now()
         try:
-            flo_arr = [struct.unpack('f', msg.payload[i:i+4])[0] for i in range(0, len(msg.payload), 4)]
+            flo_arr = [struct.unpack('f', msg.payload[i:i+4])[0] 
+                       for i in range(0, len(msg.payload), 4)]
             # data must be transposed to match what is shown on AtomS3 display
             thermal_img = np.array(flo_arr).reshape(24,32).T
             im.set_data(thermal_img)
@@ -178,13 +185,13 @@ def on_message(client, userdata, msg):
             time_text.set_text(datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
             fig.canvas.draw() # draw canvas
 
-            video.add_frame(img_fig)
+            video.add_frame(fig, img_dim)
         except (struct.error, ValueError):
             logger.warning("Received invalid image")
             logger.debug(f"Invalid img: {msg.payload}")
 
     if msg.topic == "/singlecameras/camera1/pixels/data":
-        single_pixels.get_data(msg.payload.decode(), ax_pixels, start_time)
+        single_pixels.update_data(msg.payload.decode(), ax_pixels, start_time)
         pix_text.set_text(f"Number of current pixels: {len(single_pixels.p)}")
 
         if save_file:
@@ -196,8 +203,9 @@ def on_message(client, userdata, msg):
         single_pixels.draw_on(draw_pixel)
 
     if msg.topic == "/singlecameras/camera1/area/data":
-        area.get_data(msg.payload.decode(), ax_area, start_time)
-        fig_text.set_text(f"Area: ({area.a[0][0]},{area.a[0][1]}), w={area.a[0][2]}, h={area.a[0][3]}") # TODO: ugly
+        area.update_data(msg.payload.decode(), ax_area, start_time)
+        x, y, w, h = area.a[0][:]
+        fig_text.set_text(f"Area: ({x},{y}), w={w}, h={h}") # TODO: ugly
 
         if save_file:
             f_area.write(f"{datetime.now()}, {area.out_data()}\n")
@@ -358,7 +366,8 @@ except KeyboardInterrupt:
     plt.close("all")
     logger.info("Shutting down...")
 finally:
-    f_pix.close()
-    f_area.close()
+    if save_file:
+        f_pix.close()
+        f_area.close()
     client.loop_stop()
     client.disconnect()

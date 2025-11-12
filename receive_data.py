@@ -351,19 +351,6 @@ panel.get_info.on_clicked(info_cb)
 
 
 # TODO: it would be very nice if the box turned red when invalid values are inserted
-def set_rate(expression):
-    try:
-        val = float(expression)
-        allowed = [0.5, 1, 2, 4, 8, 16, 32, 64]
-        if val in allowed:
-            settings.set_rate(val)
-        else:
-            nearest = min(allowed, key=lambda x: abs(x - val))
-            settings.set_rate(nearest)
-            print(f"Refresh rate set to nearest valid value: {nearest} Hz")
-    except ValueError:
-        print("Invalid input for refresh rate: it must be a number.")
-
 def set_shift(expression):
     # TODO: I have no idea of the allowed range for this parameter
     try:
@@ -383,7 +370,6 @@ def set_em(expression):
     except ValueError:
         print("Invalid input for emissivity: it must be a number between 0 and 1.")
 
-panel.rate_box.on_submit(set_rate)
 panel.shift_box.on_submit(set_shift)
 panel.emissivity_box.on_submit(set_em)
 
@@ -423,7 +409,11 @@ panel.reset_settings.on_clicked(reset_set)
 def mode_changed(label):
     settings.set_readout(label)
 
+def set_rate(label):
+    settings.set_rate(float(label))
+
 panel.mode_selector.on_clicked(mode_changed)
+panel.rate_selector.on_clicked(set_rate)
 
 try:
     client.loop_start()

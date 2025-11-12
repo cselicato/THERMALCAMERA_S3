@@ -1,3 +1,5 @@
+from datetime import datetime
+import re
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import patches
@@ -15,16 +17,30 @@ class InterestingPixels:
 
     def __init__(self):
         self.p = np.empty((0, 2), dtype=int)
+        self.pixels_data = {} # will contain the pixel as a key and as a value another dict
+                 #  with the times, values and Line2D
 
-    def __str__(self):
+    def __str__(self): # TODO: useless
         s = ""
         for p in self.p:
             s += f"({p[0]}, {p[1]}) "
         return s
 
+
+    def out_data(self):
+        """ Return a string with data to be written in output file
+        """
+        out = ""
+        # loop over data dict
+        for key, v in self.pixels_data.items():
+            out += f" {key}, {v["temps"][-1]},"
+        out = out[:-1] # remove last comma       
+        
+        return out
+
     def cleanup(self, scatter):
         """
-        Delete previous pixels
+        Delete previous pixels and data 
 
         Parameters
         ----------
@@ -34,6 +50,7 @@ class InterestingPixels:
 
         scatter.set_data([], [])
         self.p = np.empty((0, 2), dtype=int)
+        self.pixels_data = {}
 
     def draw_on(self, scatter):
         """
@@ -125,6 +142,39 @@ class InterestingPixels:
         return f"{self.p[-1][0]} {self.p[-1][1]}"
 
 
+    def update_data(self, msg, ax, t):
+        """
+        Get pixel(s) data from message
+        """
+
+        try:
+            logger.debug(msg)
+            # get current pixels and data from message
+            current = [list(map(float, p.split(' '))) for p in msg.split(",")]
+            t = (datetime.now() - t).total_seconds()
+
+            # now update value in dictionary or add new one if not present
+            for x, y, val in current:
+                pixel = (int(x), int(y))
+                if pixel not in self.pixels_data: # add to dict and make new line
+                    logger.info(f"Receiving new pixel: {pixel}")
+                    # create line for its data
+                    l, = ax.plot([], [], label=str(pixel), color=np.random.rand(3,))
+                    ax.legend(loc="upper left", bbox_to_anchor=(1,1))
+                    # add (empty) data and Line2D to dict
+                    self.pixels_data[pixel] = {"times": [], "temps": [], "line": l}
+                # add values (temperature and time)
+                single = self.pixels_data[pixel]
+                single["times"].append(t)
+                single["temps"].append(val)
+                single["line"].set_data(single["times"], single["temps"])
+
+            # update plot axes
+            ax.relim()
+            ax.autoscale_view()
+        except (ValueError, KeyError):
+            logger.warning(f"Received data has invalid format: {msg.payload}")
+
 
 
 class InterestingArea:
@@ -134,8 +184,10 @@ class InterestingArea:
 
     def __init__(self):
         self.a = np.empty((0, 4),dtype=int)
+        self.area_data = {} # will contain the area as a key and as a value another dict
+               #  with the times, values and Line2D (even though only one area at the time is defined)
 
-    def __str__(self):
+    def pub_area(self):
         """
         Implemented to make publishing easier: it has to be formatted as
         "x_left y_low w h"
@@ -143,7 +195,19 @@ class InterestingArea:
 
         return f"{self.a[0][0]} {self.a[0][1]} {self.a[0][2]} {self.a[0][3]}" # it's a bit ugly
 
-    def cleanup(self, axes):
+    def out_data(self):
+        """ Return a string with data to be written in output file
+        """
+        x, y, w, h = self.a[0][:]
+        a = self.area_data[str(self.a)]
+        
+        avg = a["avg"][-1]
+        min = a["min"][-1]
+        max = a["max"][-1]
+        out = f"{x}, {y}, {w}, {h}, {avg}, {min}, {max}"
+        return out
+
+    def cleanup(self, ax):
         """
         Delete area drawing from axes
 
@@ -152,7 +216,7 @@ class InterestingArea:
         ax : matplotlib Axes
         """
 
-        for p in reversed(axes.patches): # remove previously drawn patches
+        for p in reversed(ax.patches): # remove previously drawn patches
             p.remove()
 
     def draw_on(self, ax):
@@ -206,6 +270,7 @@ class InterestingArea:
         if msg == "none":
             logger.info("No area is defined.")
             self.a = np.empty((0, 4),dtype=int)
+            self.area_data = {}
             self.cleanup(ax)
         else:
             self.get_from_str(msg)
@@ -233,4 +298,42 @@ class InterestingArea:
             h = MAX_Y+1-y_low
         
         self.a = np.array([(x_left, y_low, w, h)], dtype=int)
-    
+
+    def update_data(self, msg, ax, t):
+        """
+        Get area data from message
+        """
+        try:
+            logger.debug(msg)
+            pattern = r'(\w+):\s(-?\d+\.?\d?)'
+            matches = re.findall(pattern, msg)
+            # Convert to dictionary, converting numbers to float or int automatically
+            data = {k: float(v) if "." in v else int(v) for k, v in matches}
+
+            if (data["max"] and data["min"] and data["avg"]): # values should be appended only if they are all present
+                x = (datetime.now() - t).total_seconds()
+                if str(self.a) not in self.area_data:
+                    # create 2DLine for min, max and avg
+                    l_avg, = ax.plot([], [], color='green', markersize=12, label=r"$T_{avg}$")
+                    l_min, = ax.plot([], [], color='blue', markersize=12, label=r"$T_{min}$")
+                    l_max, = ax.plot([], [], color='red', markersize=12, label=r"$T_{max}$")
+                    if not hasattr(ax, "_legend"): # TODO: it still shows multiple legends
+                        ax.legend(loc="upper left", bbox_to_anchor=(1,0.5))
+                    self.area_data[str(self.a)] = {"times" : [], "avg" : [], "min" : [], "max" : [],
+                                            "l_avg" : l_avg, "l_min" : l_min, "l_max" : l_max}
+                # only the currently defined area data is getting updated
+                a = self.area_data[str(self.a)]
+                a["times"].append(x)
+                a["avg"].append(data["avg"])
+                a["min"].append(data["min"])
+                a["max"].append(data["max"])
+                a["l_avg"].set_data(a["times"], a["avg"])
+                a["l_min"].set_data(a["times"], a["min"])
+                a["l_max"].set_data(a["times"], a["max"])
+
+                # update plot axes
+                ax.relim()
+                ax.autoscale_view()
+
+        except (TypeError, KeyError):
+            logger.warning(f"Received data has invalid format: {msg.payload}") 

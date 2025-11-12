@@ -273,7 +273,8 @@ void setup() {
        
     // Initialize I2C for ATOMS3
     Wire.begin(2, 1);  // SDA=2, SCL=1 for Grove port
-    Wire.setClock(450000);
+    // Wire.setClock(450000);
+    Wire.setClock(1000000);
 
     // Wait for serial connection with timeout (2 seconds max)
     unsigned long serialTimeout = millis() + 2000;
@@ -589,15 +590,15 @@ void loop() {
         M5.Display.printf("%d-%d", MINTEMP, MAXTEMP); // update max/min temperature info shown on display
     }
 
+    loopTime = millis();
+    endTime = loopTime;
+    fps = 1000 / (endTime - startTime);
+
     // Update the temperature scale every 5 seconds
     if (loopTime-lastUpdate>time_interval){
         lastUpdate = loopTime;
         auto_scale(max_v, min_v);
     }
-
-    loopTime = millis();
-    endTime = loopTime;
-    fps = 1000 / (endTime - startTime);
     
     // Show FPS and current mode on right side
     M5.Display.setCursor(98, 110);

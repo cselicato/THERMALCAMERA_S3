@@ -28,7 +28,7 @@ def level_filter(levels):
     return is_level
 
 logger.remove(0)
-logger.add(sys.stderr, filter=level_filter(["WARNING", "INFO"]))
+logger.add(sys.stderr, filter=level_filter(["WARNING", "DEBUG"]))
 
 start_time = datetime.now()
 max_dead_time = timedelta(seconds=4) # in seconds
@@ -140,7 +140,7 @@ def on_message(client, userdata, msg):
 
     global im, single_pixels, area, received, last_received, panel
 
-    last_received = datetime.now()
+    
 
 
     if msg.topic == "/singlecameras/camera1/settings/current":
@@ -152,7 +152,6 @@ def on_message(client, userdata, msg):
             st_settings = msg.payload.decode()
             pattern_set = r'(\w+):\s(\d+(?:\.\d+)?)'
             matches_set = re.findall(pattern_set, st_settings)
-            logger.debug(matches_set)
 
             # Convert to dictionary
             # current_set = {k: float(v) if "." in v else int(v) for k, v in matches_set}
@@ -170,6 +169,7 @@ def on_message(client, userdata, msg):
     # an image is recieved from the sensor: plot the image and, if video
     # button is clicked, add frame to video
     if msg.topic == "/singlecameras/camera1/image":
+        last_received = datetime.now()
         try:
             flo_arr = [struct.unpack('f', msg.payload[i:i+4])[0] for i in range(0, len(msg.payload), 4)]
             # data must be transposed to match what is shown on AtomS3 display
@@ -191,13 +191,15 @@ def on_message(client, userdata, msg):
 
     if msg.topic == "/singlecameras/camera1/pixels/data":
         try:
-            logger.debug(f"Pixel data: {msg.payload.decode()}")
+            # logger.debug(f"Pixel data: {msg.payload.decode()}")
             # get current pixels and data from message
             current = [list(map(float, p.split(' '))) for p in msg.payload.decode().split(",")]
             t = (datetime.now() - start_time).total_seconds()
 
             # now update value in dictionary or add new one if not present
             for x, y, val in current:
+                if val>50:
+                    logger.info(f"Pixel temperature: {val}, message is {msg.payload}")
                 pixel = (int(x), int(y))
                 if pixel not in pixels_data: # add to dict and make new line
                     logger.info(f"Receiving new pixel: {pixel}")
@@ -226,9 +228,9 @@ def on_message(client, userdata, msg):
 
     if msg.topic == "/singlecameras/camera1/area/data":
         try:
-            logger.debug(f"Area data: {msg.payload.decode()}")
+            # logger.debug(f"Area data: {msg.payload.decode()}")
             st = msg.payload.decode()
-            pattern = r'(\w+):\s(\d+\.?\d?)'
+            pattern = r'(\w+):\s(-?\d+\.?\d?)'
             matches = re.findall(pattern, st)
             # Convert to dictionary, converting numbers to float or int automatically
             data = {k: float(v) if "." in v else int(v) for k, v in matches}
@@ -347,21 +349,20 @@ def info_cb(event):
 
 panel.get_info.on_clicked(info_cb)
 
-def set_rate(expression):
 
+# TODO: it would be very nice if the box turned red when invalid values are inserted
+def set_rate(expression):
     try:
         val = float(expression)
         allowed = [0.5, 1, 2, 4, 8, 16, 32, 64]
         if val in allowed:
             settings.set_rate(val)
-            print(f"Refresh rate set to {val} Hz")
         else:
             nearest = min(allowed, key=lambda x: abs(x - val))
             settings.set_rate(nearest)
             print(f"Refresh rate set to nearest valid value: {nearest} Hz")
     except ValueError:
         print("Invalid input for refresh rate: it must be a number.")
-    print(expression)
 
 def set_shift(expression):
     # TODO: I have no idea of the allowed range for this parameter
@@ -369,7 +370,6 @@ def set_shift(expression):
         settings.set_shift(int(expression))
     except ValueError:
         print("Invalid input for shift: it must be a number.")
-    print(expression)
 
 def set_em(expression):
     try:
@@ -382,14 +382,13 @@ def set_em(expression):
             print(f"Invalid emissivity: it must be between 0 and 1.")
     except ValueError:
         print("Invalid input for emissivity: it must be a number between 0 and 1.")
-    print(expression)
 
 panel.rate_box.on_submit(set_rate)
 panel.shift_box.on_submit(set_shift)
 panel.emissivity_box.on_submit(set_em)
 
 def apply_set(event):
-    print(settings.publish_form())
+    logger.info("Sending new settings to AtomS3")
     client.publish("/singlecameras/camera1/settings", settings.publish_form())
 
 
@@ -404,7 +403,7 @@ def update_status():
         panel.state.set_text("OFFLINE")
         panel.state.set_color("red")
         bbox = panel.state.get_bbox_patch()
-        bbox.set_facecolor((1.0, 0.8, 0.8))  # light red (soft pinkish fill)
+        bbox.set_facecolor((1.0, 0.8, 0.8))  # light red
         bbox.set_edgecolor((1.0, 0.5, 0.5))  # red border
 
     panel.fig.canvas.draw()
@@ -414,18 +413,15 @@ timer.add_callback(update_status)
 timer.start()
 
 def reset_set(event):
-    print("Now i would send over the default setting")
+    logger.info("Sending default settings to AtomS3")
+    settings.default()
+    client.publish("/singlecameras/camera1/settings", settings.publish_form())
 
 panel.apply_settings.on_clicked(apply_set)
 panel.reset_settings.on_clicked(reset_set)
 
 def mode_changed(label):
     settings.set_readout(label)
-
-    if label == 'Chess pattern':
-        print(label)
-    elif label == 'TV interleave':
-        print(label)
 
 panel.mode_selector.on_clicked(mode_changed)
 

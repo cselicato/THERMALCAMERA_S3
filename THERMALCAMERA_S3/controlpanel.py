@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 from matplotlib.widgets import TextBox
 from matplotlib.widgets import RadioButtons
+from loguru import logger
 
 
 class ControlPanel:
@@ -63,6 +64,9 @@ class CameraSettings:
     def __init__(self):
         # initialize with default values
         self.settings = {"rate" : 2, "shift" : 8, "emissivity" : 0.95, "mode": 0}
+    
+    def default(self):
+        self.settings = {"rate" : 2, "shift" : 8, "emissivity" : 0.95, "mode": 0}        
 
     def set_rate(self, r):
         self.settings["rate"] = r
@@ -89,4 +93,5 @@ class CameraSettings:
         converted = conversion[self.settings["rate"]]
 
         string = f"{converted}\n{self.settings["shift"]}\n{self.settings["emissivity"]}\n{self.settings["mode"]}\n"
+        logger.debug(f"Publishing {string}")
         return string

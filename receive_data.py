@@ -30,6 +30,10 @@ def level_filter(levels):
 logger.remove(0)
 logger.add(sys.stderr, filter=level_filter(["WARNING", "DEBUG"]))
 
+save_file = True
+f_pix = open('pix_data.txt','w')
+f_area = open('area_data.txt','w')
+
 start_time = datetime.now()
 max_dead_time = timedelta(seconds=4) # in seconds
 last_received = datetime.now()-timedelta(seconds=10)
@@ -62,7 +66,7 @@ ax_pixels.set_xlabel("Time from start [s]")
 ax_pixels.set_ylabel("T [°C]")
 ax_pixels.grid()
 ax_pixels.margins(0.15)
-pix_text = data_fig.figure.text(0.45, 0.97, "Waiting for data...")
+pix_text = data_fig.figure.text(0.45, 0.97, "Waiting for data...") # TODO: currently useless
 
 # setup for visualization of area data
 ax_area.set_xlabel("Time from start [s]")
@@ -70,12 +74,6 @@ ax_area.set_ylabel("T [°C]")
 ax_area.grid()
 ax_area.margins(0.15)
 fig_text = fig.figure.text(0.45, 0.48, "Waiting for data...")
-
-pixels_data = {} # will contain the pixel as a key and as a value another dict
-                 #  with the times, values and Line2D
-
-area_data = {} # will contain the area as a key and as a value another dict
-               #  with the times, values and Line2D (even though only one area at the time is defined)
 
 draw_pixel, = ax_img.plot([], [], marker='+', color='red', markersize=12, linestyle='None')
 draw_clicks, = ax_img.plot([], [], marker='+', color='blue', markersize=12, linestyle='None')
@@ -140,9 +138,6 @@ def on_message(client, userdata, msg):
 
     global im, single_pixels, area, received, last_received, panel
 
-    
-
-
     if msg.topic == "/singlecameras/camera1/settings/current":
         logger.info("Received camera settings")
         # get the current camera settings
@@ -154,7 +149,6 @@ def on_message(client, userdata, msg):
             matches_set = re.findall(pattern_set, st_settings)
 
             # Convert to dictionary
-            # current_set = {k: float(v) if "." in v else int(v) for k, v in matches_set}
             current_set = {k: float(v) for k, v in matches_set}
 
             panel.rate.set_text(current_set["rate"])
@@ -190,36 +184,11 @@ def on_message(client, userdata, msg):
             logger.debug(f"Invalid img: {msg.payload}")
 
     if msg.topic == "/singlecameras/camera1/pixels/data":
-        try:
-            # logger.debug(f"Pixel data: {msg.payload.decode()}")
-            # get current pixels and data from message
-            current = [list(map(float, p.split(' '))) for p in msg.payload.decode().split(",")]
-            t = (datetime.now() - start_time).total_seconds()
+        single_pixels.get_data(msg.payload.decode(), ax_pixels, start_time)
+        pix_text.set_text(f"Number of current pixels: {len(single_pixels.p)}")
 
-            # now update value in dictionary or add new one if not present
-            for x, y, val in current:
-                if val>50:
-                    logger.info(f"Pixel temperature: {val}, message is {msg.payload}")
-                pixel = (int(x), int(y))
-                if pixel not in pixels_data: # add to dict and make new line
-                    logger.info(f"Receiving new pixel: {pixel}")
-                    # create line for its data
-                    l, = ax_pixels.plot([], [], label=str(pixel), color=np.random.rand(3,))
-                    ax_pixels.legend(loc="upper left", bbox_to_anchor=(1,1))
-                    # add (empty) data and Line2D to dict
-                    pixels_data[pixel] = {"times": [], "temps": [], "line": l}
-                # add values (temperature and time)
-                single = pixels_data[pixel]
-                single["times"].append(t)
-                single["temps"].append(val)
-                single["line"].set_data(single["times"], single["temps"])
-
-            # update plot axes
-            ax_pixels.relim()
-            ax_pixels.autoscale_view()
-            pix_text.set_text(f"Number of current pixels: {len(current)}")
-        except ValueError:
-            logger.warning(f"Received data has invalid format: {msg.payload}")
+        if save_file:
+            f_pix.write(f"{datetime.now()},{single_pixels.out_data()}\n")
 
     if msg.topic == "/singlecameras/camera1/pixels/current":
         # get pixels the camera is already looking at
@@ -227,44 +196,12 @@ def on_message(client, userdata, msg):
         single_pixels.draw_on(draw_pixel)
 
     if msg.topic == "/singlecameras/camera1/area/data":
-        try:
-            # logger.debug(f"Area data: {msg.payload.decode()}")
-            st = msg.payload.decode()
-            pattern = r'(\w+):\s(-?\d+\.?\d?)'
-            matches = re.findall(pattern, st)
-            # Convert to dictionary, converting numbers to float or int automatically
-            data = {k: float(v) if "." in v else int(v) for k, v in matches}
+        area.get_data(msg.payload.decode(), ax_area, start_time)
+        fig_text.set_text(f"Area: ({area.a[0][0]},{area.a[0][1]}), w={area.a[0][2]}, h={area.a[0][3]}") # TODO: ugly
 
-            x, y, w, h = data["x"], data["y"], data["w"], data["h"]
-            fig_text.set_text(f"Area: ({int(x)}, {int(y)}), w={int(w)} h={int(h)}")
+        if save_file:
+            f_area.write(f"{datetime.now()}, {area.out_data()}\n")
 
-            if (data["max"] and data["min"] and data["avg"]): # values should be appended only if they are all present
-                x = (datetime.now() - start_time).total_seconds()
-                if str(area.a) not in area_data:
-                    # create 2DLine for min, max and avg
-                    l_avg, = ax_area.plot([], [], color='green', markersize=12, label=r"$T_{avg}$")
-                    l_min, = ax_area.plot([], [], color='blue', markersize=12, label=r"$T_{min}$")
-                    l_max, = ax_area.plot([], [], color='red', markersize=12, label=r"$T_{max}$")
-                    if not hasattr(ax_area, "_legend"):
-                        ax_area.legend(loc="upper left", bbox_to_anchor=(1,0.5))
-                    area_data[str(area.a)] = {"times" : [], "avg" : [], "min" : [], "max" : [],
-                                            "l_avg" : l_avg, "l_min" : l_min, "l_max" : l_max}
-                # only the currently defined area data is getting updated
-                a = area_data[str(area.a)]
-                a["times"].append(x)
-                a["avg"].append(data["avg"])
-                a["min"].append(data["min"])
-                a["max"].append(data["max"])
-                a["l_avg"].set_data(a["times"], a["avg"])
-                a["l_min"].set_data(a["times"], a["min"])
-                a["l_max"].set_data(a["times"], a["max"])
-
-                # update plot axes
-                ax_area.relim()
-                ax_area.autoscale_view()
-
-        except (TypeError, KeyError):
-            logger.warning(f"Received data has invalid format: {msg.payload}")
 
     if msg.topic == "/singlecameras/camera1/area/current":
         # get area the camera is already looking at
@@ -305,8 +242,7 @@ def on_click(event):
             area.draw_on(ax_img) # and draw current one
 
             # publish the selected area
-            client.publish("/singlecameras/camera1/area", str(area))
-            print("The selected area is ",str(area))
+            client.publish("/singlecameras/camera1/area", area.pub_area())
             draw_clicks.set_data([],[]) # remove cliks from image
 
     else:
@@ -422,5 +358,7 @@ except KeyboardInterrupt:
     plt.close("all")
     logger.info("Shutting down...")
 finally:
+    f_pix.close()
+    f_area.close()
     client.loop_stop()
     client.disconnect()

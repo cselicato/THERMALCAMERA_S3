@@ -1,4 +1,3 @@
-import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 from matplotlib.widgets import TextBox
@@ -82,13 +81,12 @@ class CameraSettings:
         elif mode == 'TV interleave':
             self.settings["mode"] = 1
         else:
-            print(f"Readout mode {mode} is unknown, using default chess pattern.")
+            logger.warning(f"Readout mode {mode} is unknown, using default chess pattern.")
             self.settings["mode"] = 0
     
     def publish_form(self):
         # the rate must become a number between 0 and 7
-        # conversion = {0.5:"0x00", 1:"0x01", 2:"0x02", 4:"0x03", 8:"0x04", 16:"0x05", 32:"0x06", 64:"0x07"}
-        conversion = {0.5: 0, 1: 1, 2: 2, 4: 3, 8:4, 16:5, 32:6, 64:7}
+        conversion = {0.5: 0, 1: 1, 2: 2, 4: 3, 8:4, 16:5, 32:6, 64:7} # TODO: allowed up to 8
         converted = conversion[self.settings["rate"]]
 
         string = f"{converted}\n{self.settings["shift"]}\n{self.settings["emissivity"]}\n{self.settings["mode"]}\n"

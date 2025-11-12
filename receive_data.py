@@ -4,6 +4,7 @@
 
 import struct
 import sys
+import time
 from datetime import datetime, timedelta
 import re
 import numpy as np
@@ -29,13 +30,12 @@ def level_filter(levels):
     return is_level
 
 logger.remove(0)
-logger.add(sys.stderr, filter=level_filter(["WARNING", "DEBUG"]))
+logger.add(sys.stderr, filter=level_filter(["WARNING"]))
 
 save_file = True
-time = datetime.now().strftime("%Y%m%d_%H%M%S")
 if save_file:
-    f_pix = open(THERMALCAMERA_S3_DATA / f"pix_{time}.txt",'w', encoding="utf-8")
-    f_area = open(THERMALCAMERA_S3_DATA / f"area_{time}.txt",'w', encoding="utf-8")
+    f_pix = open(THERMALCAMERA_S3_DATA / f"pix_{datetime.now().strftime("%Y%m%d_%H%M%S")}.txt",'w', encoding="utf-8")
+    f_area = open(THERMALCAMERA_S3_DATA / f"area_{datetime.now().strftime("%Y%m%d_%H%M%S")}.txt",'w', encoding="utf-8")
 
 start_time = datetime.now()
 max_dead_time = timedelta(seconds=4) # in seconds
@@ -142,6 +142,11 @@ def on_message(client, userdata, msg):
     Define what happens when a MQTT message is received
     """
 
+    # if the received message is empty, ignore it
+    if not msg.payload:
+        logger.warning(f"Received empty message on topic {msg.topic}")
+        pass
+
     global im, img_fig, single_pixels, area, received, last_received, panel
 
     if msg.topic == "/singlecameras/camera1/settings/current":
@@ -190,6 +195,11 @@ def on_message(client, userdata, msg):
             logger.warning("Received invalid image")
             logger.debug(f"Invalid img: {msg.payload}")
 
+    if msg.topic == "/singlecameras/camera1/pixels/current":
+        # get pixels the camera is already looking at
+        single_pixels.handle_mqtt(msg.payload.decode(), draw_pixel)
+        single_pixels.draw_on(draw_pixel)
+
     if msg.topic == "/singlecameras/camera1/pixels/data":
         single_pixels.update_data(msg.payload.decode(), ax_pixels, start_time)
         pix_text.set_text(f"Number of current pixels: {len(single_pixels.p)}")
@@ -197,24 +207,19 @@ def on_message(client, userdata, msg):
         if save_file:
             f_pix.write(f"{datetime.now()},{single_pixels.out_data()}\n")
 
-    if msg.topic == "/singlecameras/camera1/pixels/current":
-        # get pixels the camera is already looking at
-        single_pixels.handle_mqtt(msg.payload.decode(), draw_pixel)
-        single_pixels.draw_on(draw_pixel)
+    if msg.topic == "/singlecameras/camera1/area/current":
+        # get area the camera is already looking at
+        area.handle_mqtt(msg.payload.decode(),ax_img)
+        area.draw_on(ax_img)
 
     if msg.topic == "/singlecameras/camera1/area/data":
         area.update_data(msg.payload.decode(), ax_area, start_time)
+        # NOTE: if current area (persistent message) is not received it does not work 
         x, y, w, h = area.a[0][:]
         fig_text.set_text(f"Area: ({x},{y}), w={w}, h={h}") # TODO: ugly
 
         if save_file:
             f_area.write(f"{datetime.now()}, {area.out_data()}\n")
-
-
-    if msg.topic == "/singlecameras/camera1/area/current":
-        # get area the camera is already looking at
-        area.handle_mqtt(msg.payload.decode(),ax_img)
-        area.draw_on(ax_img)
 
 
 def on_click(event):
@@ -239,7 +244,7 @@ def on_click(event):
         clicks = np.append(clicks, [(x, y)], axis=0)
 
         if clicks.shape[0]>2:   # reset area with more than two clicks
-            print("Click again to redefine area")
+            logger.info("Click again to redefine area")
             clicks = np.empty((0, 2), dtype=int)
 
         draw_clicks.set_data(clicks[:,0],clicks[:,1])
@@ -266,6 +271,8 @@ client.on_connect = on_connect
 client.on_message = on_message
 client.connect(MQTT_SERVER, 1883, 60)
 
+client.publish("/singlecameras/camera1/info_request", "1")
+time.sleep(0.5)
 
 cid = fig.canvas.mpl_connect('button_press_event', on_click)
 
@@ -298,9 +305,9 @@ panel.get_info.on_clicked(info_cb)
 def set_shift(expression):
     # TODO: I have no idea of the allowed range for this parameter
     try:
-        settings.set_shift(int(expression))
+        settings.set_shift(expression)
     except ValueError:
-        print("Invalid input for shift: it must be a number.")
+        logger.warning("Invalid input for shift: it must be a number.")
 
 def set_em(expression):
     try:
@@ -310,9 +317,9 @@ def set_em(expression):
             settings.set_em(em)
         else:
             panel.emissivity_box.text_disp.set_color('red')
-            print(f"Invalid emissivity: it must be between 0 and 1.")
+            logger.warning(f"Invalid emissivity: it must be between 0 and 1.")
     except ValueError:
-        print("Invalid input for emissivity: it must be a number between 0 and 1.")
+        logger.warning("Invalid input for emissivity: it must be a number between 0 and 1.")
 
 panel.shift_box.on_submit(set_shift)
 panel.emissivity_box.on_submit(set_em)

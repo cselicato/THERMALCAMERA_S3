@@ -336,4 +336,4 @@ class InterestingArea:
                 ax.autoscale_view()
 
         except (TypeError, KeyError):
-            logger.warning(f"Received data has invalid format: {msg.payload}") 
+            logger.warning(f"Received data has invalid format: {msg}") 

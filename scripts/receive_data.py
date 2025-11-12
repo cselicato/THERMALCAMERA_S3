@@ -1,6 +1,4 @@
-"""
-    Receive data from a thermal camera MLX90640 connected to AtomS3 and display it
-"""
+#!/usr/bin/env python3
 
 import struct
 import sys
@@ -13,12 +11,10 @@ from matplotlib.widgets import CheckButtons
 import paho.mqtt.client as mqtt
 from loguru import logger
 
-from THERMALCAMERA_S3 import THERMALCAMERA_S3_DATA
-from THERMALCAMERA_S3.videomaker import VideoMaker
-from THERMALCAMERA_S3.stuff import InterestingArea
-from THERMALCAMERA_S3.stuff import InterestingPixels
-from THERMALCAMERA_S3.controlpanel import ControlPanel
-from THERMALCAMERA_S3.controlpanel import CameraSettings
+from thermocam import THERMOCAM_DATA
+from thermocam.videomaker import VideoMaker
+from thermocam.roi import InterestingArea, InterestingPixels
+from thermocam.controls import ControlPanel, CameraSettings
 
 
 MQTT_SERVER = "test.mosquitto.org"
@@ -34,8 +30,8 @@ logger.add(sys.stderr, filter=level_filter(["WARNING"]))
 
 save_file = True
 if save_file:
-    f_pix = open(THERMALCAMERA_S3_DATA / f"pix_{datetime.now().strftime("%Y%m%d_%H%M%S")}.txt",'w', encoding="utf-8")
-    f_area = open(THERMALCAMERA_S3_DATA / f"area_{datetime.now().strftime("%Y%m%d_%H%M%S")}.txt",'w', encoding="utf-8")
+    f_pix = open(THERMOCAM_DATA / f"pix_{datetime.now().strftime("%Y%m%d_%H%M%S")}.txt",'w', encoding="utf-8")
+    f_area = open(THERMOCAM_DATA / f"area_{datetime.now().strftime("%Y%m%d_%H%M%S")}.txt",'w', encoding="utf-8")
 
 start_time = datetime.now()
 max_dead_time = timedelta(seconds=4) # in seconds
@@ -366,15 +362,17 @@ def set_rate(label):
 panel.mode_selector.on_clicked(mode_changed)
 panel.rate_selector.on_clicked(set_rate)
 
-try:
-    client.loop_start()
-    plt.show()
-except KeyboardInterrupt:
-    plt.close("all")
-    logger.info("Shutting down...")
-finally:
-    if save_file:
-        f_pix.close()
-        f_area.close()
-    client.loop_stop()
-    client.disconnect()
+
+if __name__ == "__main__":
+    try:
+        client.loop_start()
+        plt.show()
+    except KeyboardInterrupt:
+        plt.close("all")
+        logger.info("Shutting down...")
+    finally:
+        if save_file:
+            f_pix.close()
+            f_area.close()
+        client.loop_stop()
+        client.disconnect()

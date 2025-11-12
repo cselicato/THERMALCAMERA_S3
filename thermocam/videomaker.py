@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 from loguru import logger
 
-from THERMALCAMERA_S3 import THERMALCAMERA_S3_VIDEO
+from thermocam import THERMOCAM_VIDEO
 
 
 class VideoMaker:
@@ -28,7 +28,7 @@ class VideoMaker:
         now = datetime.now() # current date and time
         time = now.strftime("%Y%m%d_%H%M%S")
         
-        filename = THERMALCAMERA_S3_VIDEO / f"{time}.mp4"
+        filename = THERMOCAM_VIDEO / f"{time}.mp4"
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         self.video = cv2.VideoWriter(filename, fourcc, self.fps, self.size, isColor=True)
         self.filming = True

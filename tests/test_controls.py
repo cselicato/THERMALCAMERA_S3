@@ -17,6 +17,8 @@ def test_panel():
     panel.rate.set_text("is")
     panel.shift.set_text("it")
     panel.emissivity.set_text("working?")
+
+    panel.state.set_text("HELLOO :)")
     panel.fig.canvas.draw()
     plt.show()
 
@@ -28,4 +30,23 @@ def test_camerasettings():
 
     s = CameraSettings()
 
+    # the following should give no issues
+    s.set_rate(8)
+    s.set_em(0.6)
+    s.set_shift(10)
+    s.set_readout(1)
+
+    assert s.settings["rate"]== 8, "This shouldn't give errors"
+    assert s.settings["emissivity"]== 0.6, "This shouldn't give errors"
+    assert s.settings["shift"]== 10, "This shouldn't give errors"
+    assert s.settings["mode"]== 1, "This shouldn't give errors"
+    
+
+    s.default()
+    assert s.settings["rate"]== 2, "This shouldn't give errors"
+    assert s.settings["emissivity"]== 0.95, "This shouldn't give errors"
+    assert s.settings["shift"]== 8, "This shouldn't give errors"
+    assert s.settings["mode"]== 0, "This shouldn't give errors"
+
 test_panel()
+test_camerasettings()

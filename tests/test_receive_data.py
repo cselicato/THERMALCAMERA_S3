@@ -14,7 +14,12 @@ MQTT_SERVER = "test.mosquitto.org"
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 client.connect(MQTT_SERVER, 1883, 60)
 
-
+# the idea is:
+# get saved image from file and publish it (in the same format
+# the AtomS3 would)
+# then check if receive_data plots the expected thing
+# where check means look at it
+# a similar thing could be done for the other data 
 def test_thermal_img():
 
     # get saved image

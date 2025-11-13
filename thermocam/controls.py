@@ -82,7 +82,7 @@ class ControlPanel:
                    ec=(1., 0.5, 0.5),
                    fc=(1., 0.8, 0.8),
                    ))
-
+        # TODO: methods to update status
 
 
 class CameraSettings:

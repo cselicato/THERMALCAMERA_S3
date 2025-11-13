@@ -76,9 +76,9 @@ class CameraSettings:
         self.settings["emissivity"] = e
 
     def set_readout(self, mode):
-        if mode == 'Chess pattern':
+        if mode == 'Chess pattern' or mode == 0:
             self.settings["mode"] = 0
-        elif mode == 'TV interleave':
+        elif mode == 'TV interleave' or mode == 1:
             self.settings["mode"] = 1
         else:
             logger.warning(f"Readout mode {mode} is unknown, using default chess pattern.")
@@ -90,5 +90,5 @@ class CameraSettings:
         converted = conversion[self.settings["rate"]]
 
         string = f"{converted}\n{self.settings["shift"]}\n{self.settings["emissivity"]}\n{self.settings["mode"]}\n"
-        logger.debug(f"Publishing {string}")
+        logger.debug(f"Publishing:\n{string}")
         return string

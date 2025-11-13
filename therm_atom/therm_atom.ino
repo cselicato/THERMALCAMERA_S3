@@ -29,9 +29,8 @@ String current_settings;
 #include "MLX90640_I2C_Driver_ATOMS3.h"
 
 const byte MLX90640_address = 0x33; //Default 7-bit unshifted address of the MLX90640
-// #define TA_SHIFT 8  //Default shift for MLX90640 in open air
 float emissivity = 0.95;
-float TA_SHIFT = 8.0;
+float TA_SHIFT = 8.0;       //Default shift for MLX90640 in open air
 uint8_t rate_setting = 2;
 byte readout_mode = 0; 
 
@@ -347,8 +346,6 @@ void setup() {
                  " mode: " + String(readout_mode);
         Serial.println(current_settings);
         client.publish("/singlecameras/camera1/settings/current", current_settings.c_str(), true);        
-        // Serial.printf("Loaded settings:\n Rate: %d\n TA_SHIFT: %.2f\n Emissivity: %.2f\n Mode: %d\n",
-                    //   rate_setting, TA_SHIFT, emissivity, readout_mode);
         client.publish("/singlecameras/camera1/settings/check", "end of parsing setting file");
     }
 

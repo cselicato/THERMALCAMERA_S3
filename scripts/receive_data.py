@@ -41,10 +41,11 @@ def level_filter(levels):
 logger.remove(0)
 logger.add(sys.stderr, filter=level_filter(["WARNING", "ERROR"]))
 
-save_file = True
-if save_file:
-    f_pix = open(THERMOCAM_DATA / f"pix_{datetime.now().strftime("%Y%m%d_%H%M%S")}.txt",'w', encoding="utf-8")
-    f_area = open(THERMOCAM_DATA / f"area_{datetime.now().strftime("%Y%m%d_%H%M%S")}.txt",'w', encoding="utf-8")
+SAVE_FILE = True
+if SAVE_FILE:
+    curr_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+    f_pix = open(THERMOCAM_DATA / f"pix_{curr_time}.txt",'w', encoding="utf-8")
+    f_area = open(THERMOCAM_DATA / f"area_{curr_time}.txt",'w', encoding="utf-8")
 
 start_time = datetime.now()
 max_dead_time = timedelta(seconds=4) # in seconds
@@ -84,7 +85,6 @@ def on_message(client, userdata, msg):
     # if the received message is empty, ignore it
     if not msg.payload:
         logger.warning(f"Received empty message on topic {msg.topic}")
-        pass
 
     global single_pixels, area, figure, received, last_received, panel
 
@@ -115,7 +115,7 @@ def on_message(client, userdata, msg):
     if msg.topic == "/singlecameras/camera1/image":
         last_received = datetime.now()
         try:
-            flo_arr = [struct.unpack('f', msg.payload[i:i+4])[0] 
+            flo_arr = [struct.unpack('f', msg.payload[i:i+4])[0]
                        for i in range(0, len(msg.payload), 4)]
             # data must be transposed to match what is shown on AtomS3 display
             thermal_img = np.array(flo_arr).reshape(24,32).T
@@ -130,7 +130,7 @@ def on_message(client, userdata, msg):
             figure.time_text.set_text(datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
             figure.canvas.draw() # draw canvas
 
-            video.add_frame(figure, figure.img_dim)
+            video.add_frame(figure, figure.img_dimensions())
         except (struct.error, ValueError):
             logger.warning("Received invalid image")
             logger.debug(f"Invalid img: {msg.payload}")
@@ -144,7 +144,7 @@ def on_message(client, userdata, msg):
         single_pixels.update_data(msg.payload.decode(), figure.ax_pixels, start_time)
         figure.pix_text.set_text(f"Number of current pixels: {len(single_pixels.p)}")
 
-        if save_file:
+        if SAVE_FILE:
             f_pix.write(f"{datetime.now()},{single_pixels.out_data()}\n")
 
     if msg.topic == "/singlecameras/camera1/area/current":
@@ -154,11 +154,11 @@ def on_message(client, userdata, msg):
 
     if msg.topic == "/singlecameras/camera1/area/data":
         area.update_data(msg.payload.decode(), figure.ax_area, start_time)
-        # NOTE: if current area (persistent message) is not received it does not work 
+        # NOTE: if current area (persistent message) is not received it does not work
         x, y, w, h = area.a[0][:]
-        figure.fig_text.set_text(f"Area: ({x},{y}), w={w}, h={h}") # TODO: ugly
+        figure.area_text.set_text(f"Area: ({x},{y}), w={w}, h={h}") # TODO: ugly
 
-        if save_file:
+        if SAVE_FILE:
             f_area.write(f"{datetime.now()}, {area.out_data()}\n")
 
 
@@ -232,20 +232,30 @@ figure.video_button.on_clicked(video_button_cb)
 
 # callbacks for control panel buttons
 def reset_px_cb(event):
+    """Publish pixel reset message
+    """
     client.publish("/singlecameras/camera1/pixels/reset", "1")
 
 def reset_a_cb(event):
+    """Publish pixel reset message
+    """
     client.publish("/singlecameras/camera1/area/reset", "1")
 
 def info_cb(event):
+    """Publish message for information request
+    """
     client.publish("/singlecameras/camera1/info_request", "1")
     logger.info("Sending request to AtomS3")
 
 def apply_set(event):
+    """Publish selected settings
+    """
     logger.info("Sending new settings to AtomS3")
     client.publish("/singlecameras/camera1/settings", settings.publish_form())
-    
+
 def reset_set(event):
+    """Publish default settings
+    """
     logger.info("Sending default settings to AtomS3")
     settings.default()
     client.publish("/singlecameras/camera1/settings", settings.publish_form())
@@ -259,6 +269,8 @@ panel.reset_settings.on_clicked(reset_set)
 # callbacks for textboxes on control panel
 # TODO: it would be very nice if the box turned red when invalid values are inserted
 def set_shift(expression):
+    """Set shift value
+    """
     # TODO: I have no idea of the allowed range for this parameter
     try:
         settings.set_shift(expression)
@@ -266,14 +278,16 @@ def set_shift(expression):
         logger.warning("Invalid input for shift: it must be a number.")
 
 def set_em(expression):
+    """Set shift value
+    """
     try:
         em = float(expression)
         if 0. < em <= 1.:
             panel.emissivity_box.text_disp.set_color('black')
             settings.set_em(em)
         else:
-            panel.emissivity_box.text_disp.set_color('red')
-            logger.warning(f"Invalid emissivity: it must be between 0 and 1.")
+            panel.emissivity_box.text_disp.set_color('red') # TODO: broken
+            logger.warning("Invalid emissivity: it must be between 0 and 1.")
     except ValueError:
         logger.warning("Invalid input for emissivity: it must be a number between 0 and 1.")
 
@@ -282,15 +296,23 @@ panel.emissivity_box.on_submit(set_em)
 
 # callbacks for menus on control panel
 def mode_changed(label):
+    """Set readout mode
+    """
     settings.set_readout(label)
 
 def set_rate(label):
+    """Set rate value
+    """
     settings.set_rate(float(label))
 
 panel.mode_selector.on_clicked(mode_changed)
 panel.rate_selector.on_clicked(set_rate)
 
 def update_status():
+    """
+    If last image from AtomS3 has been received less than 5 s ago,
+    display status as online, else as offline
+    """
     if datetime.now()-last_received<max_dead_time:
         panel.state.set_text("ONLINE")
         panel.state.set_color("green")
@@ -325,12 +347,12 @@ if __name__ == "__main__":
         if e.errno == 101:
             logger.error("Network is unreachable, check internet connection or try later :(")
         else:
-            logger.error(f"Connection failed: {e}")    
+            logger.error(f"Connection failed: {e}")
     except KeyboardInterrupt:
         plt.close("all")
         logger.info("Shutting down...")
     finally:
-        if save_file:
+        if SAVE_FILE:
             f_pix.close()
             f_area.close()
         client.loop_stop()

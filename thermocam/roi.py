@@ -1,7 +1,6 @@
 from datetime import datetime
 import re
 import numpy as np
-import matplotlib.pyplot as plt
 from matplotlib import patches
 from loguru import logger
 
@@ -125,8 +124,8 @@ class InterestingPixels:
         if  not np.any(np.all(self.p == [(x,y)], axis=1)): # not already present: 
             self.p = np.append(self.p, [(x, y)], axis=0)  # append pixel to array
             return True
-        else:
-            return False
+    
+        return False
         
     def new_pixel(self):
         """
@@ -202,9 +201,9 @@ class InterestingArea:
         a = self.area_data[str(self.a)]
         
         avg = a["avg"][-1]
-        min = a["min"][-1]
-        max = a["max"][-1]
-        out = f"{x}, {y}, {w}, {h}, {avg}, {min}, {max}"
+        min_T = a["min"][-1]
+        max_T = a["max"][-1]
+        out = f"{x}, {y}, {w}, {h}, {avg}, {min_T}, {max_T}"
         return out
 
     def cleanup(self, ax):
@@ -251,7 +250,6 @@ class InterestingArea:
             logger.info(f"Current area: {self.a}")
         except ValueError:
             logger.warning(f"Received area has invalid format: {msg}, still using previous area")
-            pass
 
     def handle_mqtt(self, msg, ax):
         """
@@ -277,6 +275,13 @@ class InterestingArea:
             logger.debug(f"Current area: {self.a}")
 
     def get_from_click(self, c):
+        """Define area from mouse clicks
+
+        Parameters
+        ----------
+        c : array-like with shape (2, 2)
+            contains the coordinates of the two clicked points
+        """
         x_left = int(np.min(c, axis=0)[0])
         y_low = int(np.min(c, axis=0)[1])
         w = int(abs(c[0][0] - c[1][0]))+1

@@ -1,4 +1,6 @@
-#!/usr/bin/env python3
+"""
+Script to receive and plot the thermocamera data sent by the AtomS3 
+"""
 
 import struct
 import sys

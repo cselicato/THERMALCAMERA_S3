@@ -1,7 +1,6 @@
 from datetime import datetime
 import re
 import numpy as np
-import matplotlib.pyplot as plt
 from matplotlib import patches
 from loguru import logger
 
@@ -34,8 +33,8 @@ class InterestingPixels:
         # loop over data dict
         for key, v in self.pixels_data.items():
             out += f" {key}, {v["temps"][-1]},"
-        out = out[:-1] # remove last comma       
-        
+        out = out[:-1] # remove last comma
+
         return out
 
     def cleanup(self, scatter):
@@ -74,10 +73,10 @@ class InterestingPixels:
             # add each pixel
             for i, pixel in enumerate(current):
                 coord = list(map(int, pixel.split(' ')))
-                if  not np.any(np.all(self.p == coord, axis=1)): # not already present: 
+                if  not np.any(np.all(self.p == coord, axis=1)): # not already present:
                     self.p = np.append(self.p, [[coord[0], coord[1]]], axis=0)
             logger.info(f"Current pixels: {self}")
-            
+
         except ValueError:
             logger.warning(f"Received pixels have invalid format: {msg}")
 
@@ -114,20 +113,19 @@ class InterestingPixels:
             true if pixel has been added
         """
 
-        if x>MAX_X: 
+        if x>MAX_X:
             x = MAX_X
         elif x<MIN_X:
             x = MIN_X
-        if y>MAX_Y: 
+        if y>MAX_Y:
             y = MAX_Y
         elif y<MIN_Y:
             y = MIN_Y
-        if  not np.any(np.all(self.p == [(x,y)], axis=1)): # not already present: 
+        if  not np.any(np.all(self.p == [(x,y)], axis=1)): # not already present:
             self.p = np.append(self.p, [(x, y)], axis=0)  # append pixel to array
             return True
-        else:
-            return False
-        
+        return False
+
     def new_pixel(self):
         """
         Implemented to make publishing new pixel easier
@@ -173,7 +171,7 @@ class InterestingPixels:
             ax.relim()
             ax.autoscale_view()
         except (ValueError, KeyError):
-            logger.warning(f"Received data has invalid format: {msg.payload}")
+            logger.warning(f"Received pixel data has invalid format: {msg}")
 
 
 
@@ -184,8 +182,14 @@ class InterestingArea:
 
     def __init__(self):
         self.a = np.empty((0, 4),dtype=int)
-        self.area_data = {} # will contain the area as a key and as a value another dict
-               #  with the times, values and Line2D (even though only one area at the time is defined)
+        self.area_data = {} # will contain the area as a key and as a value another dict with
+               # the times, values and Line2D (even though only one area at the time is defined)
+
+    def defined(self):
+        """Return true if area is currently defined
+        """
+        # TODO: there surely is a better way
+        return len(self.a)!=0
 
     def pub_area(self):
         """
@@ -200,11 +204,11 @@ class InterestingArea:
         """
         x, y, w, h = self.a[0][:]
         a = self.area_data[str(self.a)]
-        
+
         avg = a["avg"][-1]
-        min = a["min"][-1]
-        max = a["max"][-1]
-        out = f"{x}, {y}, {w}, {h}, {avg}, {min}, {max}"
+        min_T = a["min"][-1]
+        max_T = a["max"][-1]
+        out = f"{x}, {y}, {w}, {h}, {avg}, {min_T}, {max_T}"
         return out
 
     def cleanup(self, ax):
@@ -230,7 +234,8 @@ class InterestingArea:
         if self.a.shape[0]>0:
             self.cleanup(ax) # TODO: this has been added to prevent double drawing, but maybe there is a better way
             x_left, y_low, w, h = self.a[0][:]
-            rect = patches.Rectangle((x_left-0.5, y_low-0.5), w, h, linewidth=1, edgecolor='b', facecolor='none')
+            rect = patches.Rectangle((x_left-0.5, y_low-0.5), w, h,
+                                     linewidth=1, edgecolor='b', facecolor='none')
             ax.add_patch(rect)
 
     def get_from_str(self, msg):
@@ -246,12 +251,11 @@ class InterestingArea:
         try:
             # coordinates MUST be integers
             self.a = np.array([list(map(int, msg.split(' ')))], dtype=int)
-            # NOTE: self.a is redefined as the new area, it's not appended as in the case of the pixels:
-            #       this is beacause only one area is defined
+            # NOTE: self.a is redefined as the new area, it's not appended as in the case of 
+            #       the pixels: this is beacause only one area is defined
             logger.info(f"Current area: {self.a}")
         except ValueError:
             logger.warning(f"Received area has invalid format: {msg}, still using previous area")
-            pass
 
     def handle_mqtt(self, msg, ax):
         """
@@ -277,26 +281,33 @@ class InterestingArea:
             logger.debug(f"Current area: {self.a}")
 
     def get_from_click(self, c):
+        """Define area from mouse clicks
+
+        Parameters
+        ----------
+        c : array-like with shape (2, 2)
+            contains the coordinates of the two clicked points
+        """
         x_left = int(np.min(c, axis=0)[0])
         y_low = int(np.min(c, axis=0)[1])
         w = int(abs(c[0][0] - c[1][0]))+1
         h = int(abs(c[0][1] - c[1][1]))+1
 
         # sanity checks
-        if x_left>MAX_X: 
+        if x_left>MAX_X:
             x_left = MAX_X
         elif x_left<MIN_X:
             x_left = MIN_X
-        if y_low>MAX_Y: 
+        if y_low>MAX_Y:
             y_low = MAX_Y
         elif y_low<MIN_Y:
             y_low = MIN_Y
 
-        if x_left+w>MAX_X+1: 
+        if x_left+w>MAX_X+1:
             w = MAX_X+1-x_left
-        if y_low+h>MAX_Y+1: 
+        if y_low+h>MAX_Y+1:
             h = MAX_Y+1-y_low
-        
+
         self.a = np.array([(x_left, y_low, w, h)], dtype=int)
 
     def update_data(self, msg, ax, t):
@@ -309,15 +320,15 @@ class InterestingArea:
             matches = re.findall(pattern, msg)
             # Convert to dictionary, converting numbers to float or int automatically
             data = {k: float(v) if "." in v else int(v) for k, v in matches}
-
-            if (data["max"] and data["min"] and data["avg"]): # values should be appended only if they are all present
+            # values should be appended only if they are all present
+            if (data["max"] and data["min"] and data["avg"]):
                 x = (datetime.now() - t).total_seconds()
                 if str(self.a) not in self.area_data:
                     # create 2DLine for min, max and avg
                     l_avg, = ax.plot([], [], color='green', markersize=12, label=r"$T_{avg}$")
                     l_min, = ax.plot([], [], color='blue', markersize=12, label=r"$T_{min}$")
                     l_max, = ax.plot([], [], color='red', markersize=12, label=r"$T_{max}$")
-                    if not hasattr(ax, "_legend"): # TODO: it still shows multiple legends
+                    if ax.get_legend() is None:
                         ax.legend(loc="upper left", bbox_to_anchor=(1,0.5))
                     self.area_data[str(self.a)] = {"times" : [], "avg" : [], "min" : [], "max" : [],
                                             "l_avg" : l_avg, "l_min" : l_min, "l_max" : l_max}
@@ -336,4 +347,4 @@ class InterestingArea:
                 ax.autoscale_view()
 
         except (TypeError, KeyError):
-            logger.warning(f"Received data has invalid format: {msg}") 
+            logger.warning(f"Received area data has invalid format: {msg}")

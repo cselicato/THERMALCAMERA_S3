@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thermocam"
+version = "1.0"
+description = " "
+authors = [{name="Carmen Selicato", email="selicatocarmen@gmail.com"}]
+readme = "README.md"
+license = {file = "LICENSE"}
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "opencv-python",
+    "paho-mqtt",
+    "loguru"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["thermocam"]

@@ -25,7 +25,7 @@ def test_panel():
 
 def test_camerasettings():
     """
-    I'll think about something
+    Check values are set correctly
     """
 
     s = CameraSettings()
@@ -48,5 +48,6 @@ def test_camerasettings():
     assert s.settings["shift"]== 8, "This shouldn't give errors"
     assert s.settings["mode"]== 0, "This shouldn't give errors"
 
-test_panel()
-test_camerasettings()
+if __name__ == "__main__":
+    test_panel()
+    test_camerasettings()

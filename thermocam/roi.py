@@ -171,7 +171,7 @@ class InterestingPixels:
             ax.relim()
             ax.autoscale_view()
         except (ValueError, KeyError):
-            logger.warning(f"Received data has invalid format: {msg.payload}")
+            logger.warning(f"Received pixel data has invalid format: {msg}")
 
 
 
@@ -184,6 +184,12 @@ class InterestingArea:
         self.a = np.empty((0, 4),dtype=int)
         self.area_data = {} # will contain the area as a key and as a value another dict with
                # the times, values and Line2D (even though only one area at the time is defined)
+
+    def defined(self):
+        """Return true if area is currently defined
+        """
+        # TODO: there surely is a better way
+        return len(self.a)!=0
 
     def pub_area(self):
         """
@@ -322,7 +328,7 @@ class InterestingArea:
                     l_avg, = ax.plot([], [], color='green', markersize=12, label=r"$T_{avg}$")
                     l_min, = ax.plot([], [], color='blue', markersize=12, label=r"$T_{min}$")
                     l_max, = ax.plot([], [], color='red', markersize=12, label=r"$T_{max}$")
-                    if not hasattr(ax, "_legend"): # TODO: it still shows multiple legends
+                    if ax.get_legend() is None:
                         ax.legend(loc="upper left", bbox_to_anchor=(1,0.5))
                     self.area_data[str(self.a)] = {"times" : [], "avg" : [], "min" : [], "max" : [],
                                             "l_avg" : l_avg, "l_min" : l_min, "l_max" : l_max}
@@ -341,4 +347,4 @@ class InterestingArea:
                 ax.autoscale_view()
 
         except (TypeError, KeyError):
-            logger.warning(f"Received data has invalid format: {msg}")
+            logger.warning(f"Received area data has invalid format: {msg}")

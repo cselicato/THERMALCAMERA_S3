@@ -1,38 +1,58 @@
 """
 Test script receive_data.py
+
+Usage: run this script and then run receive_data to visually check
+it plots what expected
 """
 
 import ast
-import matplotlib.pyplot as plt
-import struct
-import numpy as np
+import time
 import paho.mqtt.client as mqtt
 from loguru import logger
 
-
 MQTT_SERVER = "test.mosquitto.org"
-client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-client.connect(MQTT_SERVER, 1883, 60)
 
-# the idea is:
-# get saved image from file and publish it (in the same format
-# the AtomS3 would)
-# then check if receive_data plots the expected thing
-# where check means look at it
-# a similar thing could be done for the other data 
-def test_thermal_img():
+class DummyCamera:
+    """
+    Generate and publish data that mimics what the AtomS3 publishes
+    """
 
-    # get saved image
-    with open("tests/image.txt") as file:
-        lines = [line.rstrip() for line in file]
+    def __init__(self):
+        self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+        self.client.connect(MQTT_SERVER, 1883, 60)
 
-    data = ast.literal_eval(lines[0])
-    flo_arr = [struct.unpack('f', data[i:i+4])[0] 
-               for i in range(0, len(data), 4)]
-    
-    thermal_img = np.array(flo_arr).reshape(24,32).T
-    fig, ax = plt.subplots()
-    im = ax.imshow(thermal_img, cmap='inferno')
-    plt.show()
+    def pixel_data(self):
+        """ Publish pixel data
+        """
+        self.client.publish("/singlecameras/camera1/pixels/data", "1 2 3.00,4 5 6.00")
 
-test_thermal_img()
+    def area_data(self):
+        """ Publish area data
+        """
+        self.client.publish("/singlecameras/camera1/area/data", "max: 10 min: 9 avg: 8 x: 7 y: 6 w: 5 h: 4")
+
+    def image(self):
+        """ Publish image
+        """
+        with open("tests/image.txt") as file:
+            lines = [line.rstrip() for line in file]
+        img = ast.literal_eval(lines[0])
+        self.client.publish("/singlecameras/camera1/image", img)
+
+
+def manual_test_loop():
+    camera = DummyCamera()
+
+    logger.info("Starting dummy camera publish loop. Press CTRL+C to stop.")
+    try:
+        while True:
+            time.sleep(0.5)
+            camera.pixel_data()
+            camera.area_data()
+            camera.image()
+    except KeyboardInterrupt:
+        logger.info("Stopped by user.")
+
+
+if __name__ == "__main__":
+    manual_test_loop()

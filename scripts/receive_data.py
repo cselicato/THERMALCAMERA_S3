@@ -155,11 +155,14 @@ def on_message(client, userdata, msg):
     if msg.topic == "/singlecameras/camera1/area/data":
         area.update_data(msg.payload.decode(), figure.ax_area, start_time)
         # NOTE: if current area (persistent message) is not received it does not work
-        x, y, w, h = area.a[0][:]
-        figure.area_text.set_text(f"Area: ({x},{y}), w={w}, h={h}") # TODO: ugly
+        if area.defined(): # TODO: ugly
+            x, y, w, h = area.a[0][:]
+            figure.area_text.set_text(f"Area: ({x},{y}), w={w}, h={h}")
+            if SAVE_FILE:
+                f_area.write(f"{datetime.now()}, {area.out_data()}\n")
+        else:
+            logger.info("No current area...")
 
-        if SAVE_FILE:
-            f_area.write(f"{datetime.now()}, {area.out_data()}\n")
 
 
 
@@ -286,7 +289,7 @@ def set_em(expression):
             panel.emissivity_box.text_disp.set_color('black')
             settings.set_em(em)
         else:
-            panel.emissivity_box.text_disp.set_color('red') # TODO: broken
+            panel.emissivity_box.text_disp.set_color('red') # TODO: broken (or maybe not)
             logger.warning("Invalid emissivity: it must be between 0 and 1.")
     except ValueError:
         logger.warning("Invalid input for emissivity: it must be a number between 0 and 1.")

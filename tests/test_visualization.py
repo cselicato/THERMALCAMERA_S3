@@ -1,5 +1,5 @@
 """
-Test for module controls
+Test for module visualization
 """
 
 import matplotlib.pyplot as plt
@@ -13,6 +13,7 @@ def test_display():
     """
 
     fig = Display()
-    fig.show()
-    
-test_display()
+    plt.show()
+
+if __name__ == "__main__":
+    test_display()

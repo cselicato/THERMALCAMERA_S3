@@ -13,7 +13,7 @@ class Display():
     """
     def __init__(self, figsize=(10, 5)):
         self._fig = plt.figure(figsize=figsize)
-        self.img_fig, self.data_fig, self.canvas = self._setup_fig()        
+        self.img_fig, self.data_fig, self.canvas = self._setup_fig()
         self._create_axes()
         self._init_image()
         self._init_plots()
@@ -36,10 +36,6 @@ class Display():
         img_fig = fig.add_subfigure(gs[0])
         data_fig = fig.add_subfigure(gs[1])
 
-        # clear space for legend and make it look right
-        data_fig.subplots_adjust(right=0.77, hspace=0.5, top=0.95, bottom=0.1)
-        img_fig.subplots_adjust(top=0.95, bottom=0.1, right=0.9, left=0.15)
-
         return img_fig, data_fig, fig.canvas
 
 
@@ -47,8 +43,13 @@ class Display():
         """
         Create axes for thermal image, pixels data and area data
         """
-        self.ax_img = self.img_fig.subplots()
-        self.ax_pixels, self.ax_area = self.data_fig.subplots(2, 1)
+        gs_img = self.img_fig.add_gridspec(1, 1,left=0.15, right=0.90,top=0.95, bottom=0.10)
+        self.ax_img = self.img_fig.add_subplot(gs_img[0])
+
+        gs_data = self.data_fig.add_gridspec(2, 1,top=0.95, bottom=0.10,right=0.77, hspace=0.5
+                                             )
+        self.ax_pixels = self.data_fig.add_subplot(gs_data[0])
+        self.ax_area   = self.data_fig.add_subplot(gs_data[1])
 
     def _init_image(self):
         """
@@ -108,12 +109,6 @@ class Display():
                 ['Select area',],[False,], check_props={'color':'red', 'linewidth':1})
         self.video_button = CheckButtons(plt.axes([0.4*0.1, 0.9, 0.4*0.3, 0.075]),
                 ['Video',], [False,],check_props={'color':'green', 'linewidth':1})
-
-    def show(self):
-        """
-        Show the display
-        """
-        plt.show()
 
     def update_cbar(self, min_temp, max_temp):
         """

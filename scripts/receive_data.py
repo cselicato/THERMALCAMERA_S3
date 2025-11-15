@@ -140,12 +140,11 @@ def on_message(client, userdata, msg):
             video.add_frame(figure, figure.img_dimensions())
         except (struct.error, ValueError):
             logger.warning("Received invalid image")
-            logger.debug(f"Invalid img: {msg.payload}")
 
     if msg.topic == "/singlecameras/camera1/pixels/current":
         # get pixels the camera is already looking at
-        single_pixels.handle_mqtt(msg.payload.decode(), figure.draw_pixel)
-        single_pixels.draw_on(figure.draw_pixel)
+        single_pixels.handle_mqtt(msg.payload.decode())
+        figure.update_pixels(single_pixels)
 
     if msg.topic == "/singlecameras/camera1/pixels/data":
         single_pixels.update_data(msg.payload.decode(), figure.ax_pixels, start_time)
@@ -156,8 +155,8 @@ def on_message(client, userdata, msg):
 
     if msg.topic == "/singlecameras/camera1/area/current":
         # get area the camera is already looking at
-        area.handle_mqtt(msg.payload.decode(),figure.ax_img)
-        area.draw_on(figure.ax_img)
+        area.handle_mqtt(msg.payload.decode())
+        figure.update_area(area)
 
     if msg.topic == "/singlecameras/camera1/area/data":
         area.update_data(msg.payload.decode(), figure.ax_area, start_time)
@@ -203,9 +202,7 @@ def on_click(event):
 
         if clicks.shape[0] == 2:
             area.get_from_click(clicks)    # get defined area
-            area.cleanup(figure.ax_img) # remove drawing of previous area
-            area.draw_on(figure.ax_img) # and draw current one
-
+            figure.update_area(area)    #update drawn area
             # publish the selected area
             client.publish("/singlecameras/camera1/area", area.pub_area())
             figure.draw_clicks.set_data([],[]) # remove cliks from image
@@ -216,7 +213,7 @@ def on_click(event):
         if single_pixels.get_from_click(x, y):
             # publish position of the last pixel
             client.publish("/singlecameras/camera1/pixels/coord", single_pixels.new_pixel())
-            single_pixels.draw_on(figure.draw_pixel)
+            figure.update_pixels(single_pixels)
 # connect mouse click to callback
 cid = figure.canvas.mpl_connect('button_press_event', on_click)
 
@@ -357,4 +354,4 @@ if __name__ == "__main__":
         client.disconnect()
         if SAVE_FILE:
             f_pix.close()
-            f_area.close()        
+            f_area.close()

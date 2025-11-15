@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import CheckButtons
+from matplotlib import patches
 
 
 class Display():
@@ -60,8 +61,6 @@ class Display():
         self.image = self.ax_img.imshow(np.random.rand(32,24)*30+10, cmap='inferno')
         self.draw_pixel, = self.ax_img.plot([], [], marker='+', color='lime', ms=12,
                                             mew=2, linestyle='None')
-        # TODO: it would probably make more sense to add methods to this class to update
-        #       drawing of pixels and area (currently thst's done by the module roi)
         self.draw_clicks, = self.ax_img.plot([], [], marker='+', color='blue',
                                              markersize=12, linestyle='None')
 
@@ -105,7 +104,7 @@ class Display():
         """ 
         Create buttons to select area and to film video
         """
-        self.area_button = CheckButtons(plt.axes([0.4*0.45, 0.9, 0.4*0.3, 0.075]), 
+        self.area_button = CheckButtons(plt.axes([0.4*0.45, 0.9, 0.4*0.3, 0.075]),
                 ['Select area',],[False,], check_props={'color':'red', 'linewidth':1})
         self.video_button = CheckButtons(plt.axes([0.4*0.1, 0.9, 0.4*0.3, 0.075]),
                 ['Video',], [False,],check_props={'color':'green', 'linewidth':1})
@@ -144,3 +143,20 @@ class Display():
         box = self.img_fig.bbox
         img_dim = (box.x0, self._fig.bbox.height - box.y1, box.width, box.height)
         return img_dim
+
+    def update_pixels(self, pixels):
+        """Draw currently defined pixels on thermal image
+        """
+        self.draw_pixel.set_data(pixels.p[:,0],pixels.p[:,1])
+
+    def update_area(self, area):
+        """Draw currently defined area on thermal image
+        """
+        for p in reversed(self.ax_img.patches): # remove previously drawn patches
+            p.remove()
+        # if defined, draw current one
+        if area.defined():
+            x_left, y_low, w, h = area.a[0][:]
+            rect = patches.Rectangle((x_left-0.5, y_low-0.5), w, h,
+                                     linewidth=1, edgecolor='b', facecolor='none')
+            self.ax_img.add_patch(rect)

@@ -1,7 +1,6 @@
 from datetime import datetime
 import re
 import numpy as np
-from matplotlib import patches
 from loguru import logger
 
 MIN_X = 0
@@ -19,13 +18,6 @@ class InterestingPixels:
         self.pixels_data = {} # will contain the pixel as a key and as a value another dict
                  #  with the times, values and Line2D
 
-    def __str__(self): # TODO: useless
-        s = ""
-        for p in self.p:
-            s += f"({p[0]}, {p[1]}) "
-        return s
-
-
     def out_data(self):
         """ Return a string with data to be written in output file
         """
@@ -36,27 +28,6 @@ class InterestingPixels:
         out = out[:-1] # remove last comma
 
         return out
-
-    def cleanup(self, scatter):
-        """
-        Delete previous pixels and data 
-
-        Parameters
-        ----------
-        scatter : Line2D
-                  scatter plot that contains previously defined pixels
-        """
-
-        scatter.set_data([], [])
-        self.p = np.empty((0, 2), dtype=int)
-        self.pixels_data = {}
-
-    def draw_on(self, scatter):
-        """
-        Add selected pixels to scatter plot
-        """
-
-        scatter.set_data(self.p[:,0],self.p[:,1])
 
     def get_from_str(self, msg):
         """
@@ -81,18 +52,17 @@ class InterestingPixels:
             logger.warning(f"Received pixels have invalid format: {msg}")
 
 
-    def handle_mqtt(self, msg, scatter):
+    def handle_mqtt(self, msg):
         """
         Parameters
         ----------
         msg : str
               received MQTT message as a string
-        scatter : Line2D
-                    scatter plot to plot selected pixels
         """
 
         if msg == "none":
-            self.cleanup(scatter)
+            self.p = np.empty((0, 2), dtype=int)
+            self.pixels_data = {}
             logger.info("No pixels are defined.")
         else:
             self.get_from_str(msg)
@@ -122,7 +92,7 @@ class InterestingPixels:
         elif y<MIN_Y:
             y = MIN_Y
         if  not np.any(np.all(self.p == [(x,y)], axis=1)): # not already present:
-            self.p = np.append(self.p, [(x, y)], axis=0)  # append pixel to array
+            self.p = np.append(self.p, [(x, y)], axis=0)   # append pixel to array
             return True
         return False
 
@@ -142,7 +112,7 @@ class InterestingPixels:
 
     def update_data(self, msg, ax, t):
         """
-        Get pixel(s) data from message
+        Get pixel(s) data from message and update live plot
         """
 
         try:
@@ -199,45 +169,6 @@ class InterestingArea:
 
         return f"{self.a[0][0]} {self.a[0][1]} {self.a[0][2]} {self.a[0][3]}" # it's a bit ugly
 
-    def out_data(self):
-        """ Return a string with data to be written in output file
-        """
-        x, y, w, h = self.a[0][:]
-        a = self.area_data[str(self.a)]
-
-        avg = a["avg"][-1]
-        min_T = a["min"][-1]
-        max_T = a["max"][-1]
-        out = f"{x}, {y}, {w}, {h}, {avg}, {min_T}, {max_T}"
-        return out
-
-    def cleanup(self, ax):
-        """
-        Delete area drawing from axes
-
-        Parameters
-        ----------
-        ax : matplotlib Axes
-        """
-
-        for p in reversed(ax.patches): # remove previously drawn patches
-            p.remove()
-
-    def draw_on(self, ax):
-        """
-        Draw patch coresponding to selected area
-
-        Parameters
-        ----------
-        ax : matplotlib Axes
-        """
-        if self.a.shape[0]>0:
-            self.cleanup(ax) # TODO: this has been added to prevent double drawing, but maybe there is a better way
-            x_left, y_low, w, h = self.a[0][:]
-            rect = patches.Rectangle((x_left-0.5, y_low-0.5), w, h,
-                                     linewidth=1, edgecolor='b', facecolor='none')
-            ax.add_patch(rect)
-
     def get_from_str(self, msg):
         """
         If not none, get area definition from MQTT message as x_left, y_low, width, height
@@ -251,13 +182,13 @@ class InterestingArea:
         try:
             # coordinates MUST be integers
             self.a = np.array([list(map(int, msg.split(' ')))], dtype=int)
-            # NOTE: self.a is redefined as the new area, it's not appended as in the case of 
-            #       the pixels: this is beacause only one area is defined
+            # NOTE: self.a is redefined as the new area, it's not appended as in the case of
+            #       the pixels: only one area at the time is defined
             logger.info(f"Current area: {self.a}")
         except ValueError:
             logger.warning(f"Received area has invalid format: {msg}, still using previous area")
 
-    def handle_mqtt(self, msg, ax):
+    def handle_mqtt(self, msg):
         """
         Get current area from MQTT message.
 
@@ -268,14 +199,12 @@ class InterestingArea:
         ----------
         msg : str
               received MQTT message as a string
-        ax : matplotlib Axes
         """
 
         if msg == "none":
             logger.info("No area is defined.")
             self.a = np.empty((0, 4),dtype=int)
             self.area_data = {}
-            self.cleanup(ax)
         else:
             self.get_from_str(msg)
             logger.debug(f"Current area: {self.a}")
@@ -312,7 +241,7 @@ class InterestingArea:
 
     def update_data(self, msg, ax, t):
         """
-        Get area data from message
+        Get area data from message and update live plot
         """
         try:
             logger.debug(msg)
@@ -348,3 +277,15 @@ class InterestingArea:
 
         except (TypeError, KeyError):
             logger.warning(f"Received area data has invalid format: {msg}")
+
+    def out_data(self):
+        """ Return a string with data to be written in output file
+        """
+        x, y, w, h = self.a[0][:]
+        a = self.area_data[str(self.a)]
+
+        avg = a["avg"][-1]
+        min_T = a["min"][-1]
+        max_T = a["max"][-1]
+        out = f"{x}, {y}, {w}, {h}, {avg}, {min_T}, {max_T}"
+        return out

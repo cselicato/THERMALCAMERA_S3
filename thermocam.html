@@ -111,9 +111,7 @@ data-aria-dark="Switch to auto color mode">
 </li>
 <li><a class="reference internal" href="#module-thermocam.roi">thermocam.roi module</a><ul>
 <li><a class="reference internal" href="#thermocam.roi.InterestingArea"><code class="docutils literal notranslate"><span class="pre">InterestingArea</span></code></a><ul>
-<li><a class="reference internal" href="#thermocam.roi.InterestingArea.cleanup"><code class="docutils literal notranslate">cleanup()</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.roi.InterestingArea.defined"><code class="docutils literal notranslate">defined()</span></code></a></li>
-<li><a class="reference internal" href="#thermocam.roi.InterestingArea.draw_on"><code class="docutils literal notranslate">draw_on()</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.roi.InterestingArea.get_from_click"><code class="docutils literal notranslate">get_from_click()</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.roi.InterestingArea.get_from_str"><code class="docutils literal notranslate">get_from_str()</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.roi.InterestingArea.handle_mqtt"><code class="docutils literal notranslate">handle_mqtt()</span></code></a></li>
@@ -123,8 +121,6 @@ data-aria-dark="Switch to auto color mode">
 </ul>
 </li>
 <li><a class="reference internal" href="#thermocam.roi.InterestingPixels"><code class="docutils literal notranslate"><span class="pre">InterestingPixels</span></code></a><ul>
-<li><a class="reference internal" href="#thermocam.roi.InterestingPixels.cleanup"><code class="docutils literal notranslate">cleanup()</span></code></a></li>
-<li><a class="reference internal" href="#thermocam.roi.InterestingPixels.draw_on"><code class="docutils literal notranslate">draw_on()</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.roi.InterestingPixels.get_from_click"><code class="docutils literal notranslate">get_from_click()</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.roi.InterestingPixels.get_from_str"><code class="docutils literal notranslate">get_from_str()</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.roi.InterestingPixels.handle_mqtt"><code class="docutils literal notranslate">handle_mqtt()</span></code></a></li>
@@ -147,7 +143,9 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#module-thermocam.visualization">thermocam.visualization module</a><ul>
 <li><a class="reference internal" href="#thermocam.visualization.Display"><code class="docutils literal notranslate"><span class="pre">Display</span></code></a><ul>
 <li><a class="reference internal" href="#thermocam.visualization.Display.img_dimensions"><code class="docutils literal notranslate">img_dimensions()</span></code></a></li>
+<li><a class="reference internal" href="#thermocam.visualization.Display.update_area"><code class="docutils literal notranslate">update_area()</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.visualization.Display.update_cbar"><code class="docutils literal notranslate">update_cbar()</span></code></a></li>
+<li><a class="reference internal" href="#thermocam.visualization.Display.update_pixels"><code class="docutils literal notranslate">update_pixels()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -458,31 +456,9 @@ as well as buttons to apply or reset settings</p>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Class used to define the interesting area</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="thermocam.roi.InterestingArea.cleanup">
-<span class="sig-name descname"><span class="pre">cleanup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingArea.cleanup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingArea.cleanup" title="Link to this definition">¶</a></dt>
-<dd><p>Delete area drawing from axes</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ax</strong> (<em>matplotlib Axes</em>)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="thermocam.roi.InterestingArea.defined">
 <span class="sig-name descname"><span class="pre">defined</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingArea.defined"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingArea.defined" title="Link to this definition">¶</a></dt>
 <dd><p>Return true if area is currently defined</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="thermocam.roi.InterestingArea.draw_on">
-<span class="sig-name descname"><span class="pre">draw_on</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingArea.draw_on"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingArea.draw_on" title="Link to this definition">¶</a></dt>
-<dd><p>Draw patch coresponding to selected area</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ax</strong> (<em>matplotlib Axes</em>)</p>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -509,16 +485,13 @@ as well as buttons to apply or reset settings</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.roi.InterestingArea.handle_mqtt">
-<span class="sig-name descname"><span class="pre">handle_mqtt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingArea.handle_mqtt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingArea.handle_mqtt" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">handle_mqtt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingArea.handle_mqtt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingArea.handle_mqtt" title="Link to this definition">¶</a></dt>
 <dd><p>Get current area from MQTT message.</p>
 <p>If no area is defined (“none”) remove drawing, else (if message can be correctly parsed)
 redefine area and then remove previous drawing</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>msg</strong> (<em>str</em>) – received MQTT message as a string</p></li>
-<li><p><strong>ax</strong> (<em>matplotlib Axes</em>)</p></li>
-</ul>
+<dd class="field-odd"><p><strong>msg</strong> (<em>str</em>) – received MQTT message as a string</p>
 </dd>
 </dl>
 </dd></dl>
@@ -539,7 +512,7 @@ redefine area and then remove previous drawing</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.roi.InterestingArea.update_data">
 <span class="sig-name descname"><span class="pre">update_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingArea.update_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingArea.update_data" title="Link to this definition">¶</a></dt>
-<dd><p>Get area data from message</p>
+<dd><p>Get area data from message and update live plot</p>
 </dd></dl>
 
 </dd></dl>
@@ -549,23 +522,6 @@ redefine area and then remove previous drawing</p>
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">thermocam.roi.</span></span><span class="sig-name descname"><span class="pre">InterestingPixels</span></span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingPixels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingPixels" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Class to define, store and do stuff with the interesting pixels</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="thermocam.roi.InterestingPixels.cleanup">
-<span class="sig-name descname"><span class="pre">cleanup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scatter</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingPixels.cleanup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingPixels.cleanup" title="Link to this definition">¶</a></dt>
-<dd><p>Delete previous pixels and data</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>scatter</strong> (<em>Line2D</em>) – scatter plot that contains previously defined pixels</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="thermocam.roi.InterestingPixels.draw_on">
-<span class="sig-name descname"><span class="pre">draw_on</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scatter</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingPixels.draw_on"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingPixels.draw_on" title="Link to this definition">¶</a></dt>
-<dd><p>Add selected pixels to scatter plot</p>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.roi.InterestingPixels.get_from_click">
 <span class="sig-name descname"><span class="pre">get_from_click</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingPixels.get_from_click"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingPixels.get_from_click" title="Link to this definition">¶</a></dt>
@@ -600,13 +556,10 @@ Also makes sure they are within correct bounds</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.roi.InterestingPixels.handle_mqtt">
-<span class="sig-name descname"><span class="pre">handle_mqtt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scatter</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingPixels.handle_mqtt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingPixels.handle_mqtt" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">handle_mqtt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingPixels.handle_mqtt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingPixels.handle_mqtt" title="Link to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>msg</strong> (<em>str</em>) – received MQTT message as a string</p></li>
-<li><p><strong>scatter</strong> (<em>Line2D</em>) – scatter plot to plot selected pixels</p></li>
-</ul>
+<dd class="field-odd"><p><strong>msg</strong> (<em>str</em>) – received MQTT message as a string</p>
 </dd>
 </dl>
 </dd></dl>
@@ -634,7 +587,7 @@ Also makes sure they are within correct bounds</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.roi.InterestingPixels.update_data">
 <span class="sig-name descname"><span class="pre">update_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingPixels.update_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingPixels.update_data" title="Link to this definition">¶</a></dt>
-<dd><p>Get pixel(s) data from message</p>
+<dd><p>Get pixel(s) data from message and update live plot</p>
 </dd></dl>
 
 </dd></dl>
@@ -711,6 +664,12 @@ On the right, it plots the received pixel(s) and area temperatures.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="thermocam.visualization.Display.update_area">
+<span class="sig-name descname"><span class="pre">update_area</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">area</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/visualization.html#Display.update_area"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.visualization.Display.update_area" title="Link to this definition">¶</a></dt>
+<dd><p>Draw currently defined area on thermal image</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="thermocam.visualization.Display.update_cbar">
 <span class="sig-name descname"><span class="pre">update_cbar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_temp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_temp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/visualization.html#Display.update_cbar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.visualization.Display.update_cbar" title="Link to this definition">¶</a></dt>
 <dd><p>Update limits of the plotted colorbar</p>
@@ -724,6 +683,12 @@ with some padding, also updates ticks on the colorbar.</p>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="thermocam.visualization.Display.update_pixels">
+<span class="sig-name descname"><span class="pre">update_pixels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pixels</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/visualization.html#Display.update_pixels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.visualization.Display.update_pixels" title="Link to this definition">¶</a></dt>
+<dd><p>Draw currently defined pixels on thermal image</p>
 </dd></dl>
 
 </dd></dl>

@@ -108,408 +108,337 @@ data-aria-dark="Switch to auto color mode">
 <span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 </span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 </span><span data-line="3"><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-</span><span data-line="4"><span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">patches</span>
-</span><span data-line="5"><span class="kn">from</span><span class="w"> </span><span class="nn">loguru</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
-</span><span data-line="6">
-</span><span data-line="7"><span class="n">MIN_X</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span data-line="8"><span class="n">MAX_X</span> <span class="o">=</span> <span class="mi">23</span>
-</span><span data-line="9"><span class="n">MIN_Y</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span data-line="10"><span class="n">MAX_Y</span> <span class="o">=</span> <span class="mi">31</span>
-</span><span data-line="11">
+</span><span data-line="4"><span class="kn">from</span><span class="w"> </span><span class="nn">loguru</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="n">MIN_X</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="7"><span class="n">MAX_X</span> <span class="o">=</span> <span class="mi">23</span>
+</span><span data-line="8"><span class="n">MIN_Y</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="9"><span class="n">MAX_Y</span> <span class="o">=</span> <span class="mi">31</span>
+</span><span data-line="10">
 <div class="viewcode-block" id="InterestingPixels">
 <a class="viewcode-back" href="../../thermocam.html#thermocam.roi.InterestingPixels">[docs]</a>
-</span><span data-line="12"><span class="k">class</span><span class="w"> </span><span class="nc">InterestingPixels</span><span class="p">:</span>
-</span><span data-line="13"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="14"><span class="sd">    Class to define, store and do stuff with the interesting pixels </span>
-</span><span data-line="15"><span class="sd">    &quot;&quot;&quot;</span>
-</span><span data-line="16">
-</span><span data-line="17">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="18">        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-</span><span data-line="19">        <span class="bp">self</span><span class="o">.</span><span class="n">pixels_data</span> <span class="o">=</span> <span class="p">{}</span> <span class="c1"># will contain the pixel as a key and as a value another dict</span>
-</span><span data-line="20">                 <span class="c1">#  with the times, values and Line2D</span>
-</span><span data-line="21">
-</span><span data-line="22">    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="c1"># TODO: useless</span>
-</span><span data-line="23">        <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-</span><span data-line="24">        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">:</span>
-</span><span data-line="25">            <span class="n">s</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">) &quot;</span>
-</span><span data-line="26">        <span class="k">return</span> <span class="n">s</span>
-</span><span data-line="27">
-</span><span data-line="28">
+</span><span data-line="11"><span class="k">class</span><span class="w"> </span><span class="nc">InterestingPixels</span><span class="p">:</span>
+</span><span data-line="12"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="13"><span class="sd">    Class to define, store and do stuff with the interesting pixels </span>
+</span><span data-line="14"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="15">
+</span><span data-line="16">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="17">        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+</span><span data-line="18">        <span class="bp">self</span><span class="o">.</span><span class="n">pixels_data</span> <span class="o">=</span> <span class="p">{}</span> <span class="c1"># will contain the pixel as a key and as a value another dict</span>
+</span><span data-line="19">                 <span class="c1">#  with the times, values and Line2D</span>
+</span><span data-line="20">
 <div class="viewcode-block" id="InterestingPixels.out_data">
 <a class="viewcode-back" href="../../thermocam.html#thermocam.roi.InterestingPixels.out_data">[docs]</a>
-</span><span data-line="29">    <span class="k">def</span><span class="w"> </span><span class="nf">out_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="30"><span class="w">        </span><span class="sd">&quot;&quot;&quot; Return a string with data to be written in output file</span>
-</span><span data-line="31"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="32">        <span class="n">out</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-</span><span data-line="33">        <span class="c1"># loop over data dict</span>
-</span><span data-line="34">        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixels_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-</span><span data-line="35">            <span class="n">out</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">v</span><span class="p">[</span><span class="s2">&quot;temps&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">,&quot;</span>
-</span><span data-line="36">        <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># remove last comma</span>
-</span><span data-line="37">
-</span><span data-line="38">        <span class="k">return</span> <span class="n">out</span></div>
+</span><span data-line="21">    <span class="k">def</span><span class="w"> </span><span class="nf">out_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="22"><span class="w">        </span><span class="sd">&quot;&quot;&quot; Return a string with data to be written in output file</span>
+</span><span data-line="23"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="24">        <span class="n">out</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+</span><span data-line="25">        <span class="c1"># loop over data dict</span>
+</span><span data-line="26">        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixels_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+</span><span data-line="27">            <span class="n">out</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">v</span><span class="p">[</span><span class="s2">&quot;temps&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">,&quot;</span>
+</span><span data-line="28">        <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># remove last comma</span>
+</span><span data-line="29">
+</span><span data-line="30">        <span class="k">return</span> <span class="n">out</span></div>
 
-</span><span data-line="39">
-<div class="viewcode-block" id="InterestingPixels.cleanup">
-<a class="viewcode-back" href="../../thermocam.html#thermocam.roi.InterestingPixels.cleanup">[docs]</a>
-</span><span data-line="40">    <span class="k">def</span><span class="w"> </span><span class="nf">cleanup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scatter</span><span class="p">):</span>
-</span><span data-line="41"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="42"><span class="sd">        Delete previous pixels and data </span>
-</span><span data-line="43">
-</span><span data-line="44"><span class="sd">        Parameters</span>
-</span><span data-line="45"><span class="sd">        ----------</span>
-</span><span data-line="46"><span class="sd">        scatter : Line2D</span>
-</span><span data-line="47"><span class="sd">                  scatter plot that contains previously defined pixels</span>
-</span><span data-line="48"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="49">
-</span><span data-line="50">        <span class="n">scatter</span><span class="o">.</span><span class="n">set_data</span><span class="p">([],</span> <span class="p">[])</span>
-</span><span data-line="51">        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-</span><span data-line="52">        <span class="bp">self</span><span class="o">.</span><span class="n">pixels_data</span> <span class="o">=</span> <span class="p">{}</span></div>
-
-</span><span data-line="53">
-<div class="viewcode-block" id="InterestingPixels.draw_on">
-<a class="viewcode-back" href="../../thermocam.html#thermocam.roi.InterestingPixels.draw_on">[docs]</a>
-</span><span data-line="54">    <span class="k">def</span><span class="w"> </span><span class="nf">draw_on</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scatter</span><span class="p">):</span>
-</span><span data-line="55"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="56"><span class="sd">        Add selected pixels to scatter plot</span>
-</span><span data-line="57"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="58">
-</span><span data-line="59">        <span class="n">scatter</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span></div>
-
-</span><span data-line="60">
+</span><span data-line="31">
 <div class="viewcode-block" id="InterestingPixels.get_from_str">
 <a class="viewcode-back" href="../../thermocam.html#thermocam.roi.InterestingPixels.get_from_str">[docs]</a>
-</span><span data-line="61">    <span class="k">def</span><span class="w"> </span><span class="nf">get_from_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
-</span><span data-line="62"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="63"><span class="sd">        If not none, get current pixels</span>
-</span><span data-line="64">
-</span><span data-line="65"><span class="sd">        Parameters</span>
-</span><span data-line="66"><span class="sd">        ----------</span>
-</span><span data-line="67"><span class="sd">        msg : str</span>
-</span><span data-line="68"><span class="sd">                received MQTT message as a string</span>
-</span><span data-line="69"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="70">
-</span><span data-line="71">        <span class="k">try</span><span class="p">:</span>
-</span><span data-line="72">            <span class="n">current</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">msg</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)))</span>
-</span><span data-line="73">            <span class="c1"># add each pixel</span>
-</span><span data-line="74">            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pixel</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">current</span><span class="p">):</span>
-</span><span data-line="75">                <span class="n">coord</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">pixel</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)))</span>
-</span><span data-line="76">                <span class="k">if</span>  <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="n">coord</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)):</span> <span class="c1"># not already present:</span>
-</span><span data-line="77">                    <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="p">[[</span><span class="n">coord</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">coord</span><span class="p">[</span><span class="mi">1</span><span class="p">]]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-</span><span data-line="78">            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Current pixels: </span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span data-line="79">
-</span><span data-line="80">        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-</span><span data-line="81">            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Received pixels have invalid format: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</span><span data-line="32">    <span class="k">def</span><span class="w"> </span><span class="nf">get_from_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+</span><span data-line="33"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="34"><span class="sd">        If not none, get current pixels</span>
+</span><span data-line="35">
+</span><span data-line="36"><span class="sd">        Parameters</span>
+</span><span data-line="37"><span class="sd">        ----------</span>
+</span><span data-line="38"><span class="sd">        msg : str</span>
+</span><span data-line="39"><span class="sd">                received MQTT message as a string</span>
+</span><span data-line="40"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="41">
+</span><span data-line="42">        <span class="k">try</span><span class="p">:</span>
+</span><span data-line="43">            <span class="n">current</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">msg</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)))</span>
+</span><span data-line="44">            <span class="c1"># add each pixel</span>
+</span><span data-line="45">            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pixel</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">current</span><span class="p">):</span>
+</span><span data-line="46">                <span class="n">coord</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">pixel</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)))</span>
+</span><span data-line="47">                <span class="k">if</span>  <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="n">coord</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)):</span> <span class="c1"># not already present:</span>
+</span><span data-line="48">                    <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="p">[[</span><span class="n">coord</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">coord</span><span class="p">[</span><span class="mi">1</span><span class="p">]]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="49">            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Current pixels: </span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span data-line="50">
+</span><span data-line="51">        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+</span><span data-line="52">            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Received pixels have invalid format: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
-</span><span data-line="82">
-</span><span data-line="83">
+</span><span data-line="53">
+</span><span data-line="54">
 <div class="viewcode-block" id="InterestingPixels.handle_mqtt">
 <a class="viewcode-back" href="../../thermocam.html#thermocam.roi.InterestingPixels.handle_mqtt">[docs]</a>
-</span><span data-line="84">    <span class="k">def</span><span class="w"> </span><span class="nf">handle_mqtt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">scatter</span><span class="p">):</span>
-</span><span data-line="85"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="86"><span class="sd">        Parameters</span>
-</span><span data-line="87"><span class="sd">        ----------</span>
-</span><span data-line="88"><span class="sd">        msg : str</span>
-</span><span data-line="89"><span class="sd">              received MQTT message as a string</span>
-</span><span data-line="90"><span class="sd">        scatter : Line2D</span>
-</span><span data-line="91"><span class="sd">                    scatter plot to plot selected pixels</span>
-</span><span data-line="92"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="93">
-</span><span data-line="94">        <span class="k">if</span> <span class="n">msg</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
-</span><span data-line="95">            <span class="bp">self</span><span class="o">.</span><span class="n">cleanup</span><span class="p">(</span><span class="n">scatter</span><span class="p">)</span>
-</span><span data-line="96">            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No pixels are defined.&quot;</span><span class="p">)</span>
-</span><span data-line="97">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="98">            <span class="bp">self</span><span class="o">.</span><span class="n">get_from_str</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+</span><span data-line="55">    <span class="k">def</span><span class="w"> </span><span class="nf">handle_mqtt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+</span><span data-line="56"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="57"><span class="sd">        Parameters</span>
+</span><span data-line="58"><span class="sd">        ----------</span>
+</span><span data-line="59"><span class="sd">        msg : str</span>
+</span><span data-line="60"><span class="sd">              received MQTT message as a string</span>
+</span><span data-line="61"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="62">
+</span><span data-line="63">        <span class="k">if</span> <span class="n">msg</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
+</span><span data-line="64">            <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+</span><span data-line="65">            <span class="bp">self</span><span class="o">.</span><span class="n">pixels_data</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span data-line="66">            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No pixels are defined.&quot;</span><span class="p">)</span>
+</span><span data-line="67">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="68">            <span class="bp">self</span><span class="o">.</span><span class="n">get_from_str</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
 
-</span><span data-line="99">
+</span><span data-line="69">
 <div class="viewcode-block" id="InterestingPixels.get_from_click">
 <a class="viewcode-back" href="../../thermocam.html#thermocam.roi.InterestingPixels.get_from_click">[docs]</a>
-</span><span data-line="100">    <span class="k">def</span><span class="w"> </span><span class="nf">get_from_click</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
-</span><span data-line="101"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="102"><span class="sd">        if coordinates are already present, do not append them</span>
-</span><span data-line="103"><span class="sd">        Also makes sure they are within correct bounds</span>
-</span><span data-line="104">
-</span><span data-line="105"><span class="sd">        Parameters</span>
-</span><span data-line="106"><span class="sd">        ----------</span>
-</span><span data-line="107"><span class="sd">        x : int</span>
-</span><span data-line="108"><span class="sd">        y : int</span>
-</span><span data-line="109">
-</span><span data-line="110"><span class="sd">        Returns</span>
-</span><span data-line="111"><span class="sd">        -------</span>
-</span><span data-line="112"><span class="sd">        bool</span>
-</span><span data-line="113"><span class="sd">            true if pixel has been added</span>
-</span><span data-line="114"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="115">
-</span><span data-line="116">        <span class="k">if</span> <span class="n">x</span><span class="o">&gt;</span><span class="n">MAX_X</span><span class="p">:</span>
-</span><span data-line="117">            <span class="n">x</span> <span class="o">=</span> <span class="n">MAX_X</span>
-</span><span data-line="118">        <span class="k">elif</span> <span class="n">x</span><span class="o">&lt;</span><span class="n">MIN_X</span><span class="p">:</span>
-</span><span data-line="119">            <span class="n">x</span> <span class="o">=</span> <span class="n">MIN_X</span>
-</span><span data-line="120">        <span class="k">if</span> <span class="n">y</span><span class="o">&gt;</span><span class="n">MAX_Y</span><span class="p">:</span>
-</span><span data-line="121">            <span class="n">y</span> <span class="o">=</span> <span class="n">MAX_Y</span>
-</span><span data-line="122">        <span class="k">elif</span> <span class="n">y</span><span class="o">&lt;</span><span class="n">MIN_Y</span><span class="p">:</span>
-</span><span data-line="123">            <span class="n">y</span> <span class="o">=</span> <span class="n">MIN_Y</span>
-</span><span data-line="124">        <span class="k">if</span>  <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="p">[(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)):</span> <span class="c1"># not already present:</span>
-</span><span data-line="125">            <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># append pixel to array</span>
-</span><span data-line="126">            <span class="k">return</span> <span class="kc">True</span>
-</span><span data-line="127">        <span class="k">return</span> <span class="kc">False</span></div>
+</span><span data-line="70">    <span class="k">def</span><span class="w"> </span><span class="nf">get_from_click</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+</span><span data-line="71"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="72"><span class="sd">        if coordinates are already present, do not append them</span>
+</span><span data-line="73"><span class="sd">        Also makes sure they are within correct bounds</span>
+</span><span data-line="74">
+</span><span data-line="75"><span class="sd">        Parameters</span>
+</span><span data-line="76"><span class="sd">        ----------</span>
+</span><span data-line="77"><span class="sd">        x : int</span>
+</span><span data-line="78"><span class="sd">        y : int</span>
+</span><span data-line="79">
+</span><span data-line="80"><span class="sd">        Returns</span>
+</span><span data-line="81"><span class="sd">        -------</span>
+</span><span data-line="82"><span class="sd">        bool</span>
+</span><span data-line="83"><span class="sd">            true if pixel has been added</span>
+</span><span data-line="84"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="85">
+</span><span data-line="86">        <span class="k">if</span> <span class="n">x</span><span class="o">&gt;</span><span class="n">MAX_X</span><span class="p">:</span>
+</span><span data-line="87">            <span class="n">x</span> <span class="o">=</span> <span class="n">MAX_X</span>
+</span><span data-line="88">        <span class="k">elif</span> <span class="n">x</span><span class="o">&lt;</span><span class="n">MIN_X</span><span class="p">:</span>
+</span><span data-line="89">            <span class="n">x</span> <span class="o">=</span> <span class="n">MIN_X</span>
+</span><span data-line="90">        <span class="k">if</span> <span class="n">y</span><span class="o">&gt;</span><span class="n">MAX_Y</span><span class="p">:</span>
+</span><span data-line="91">            <span class="n">y</span> <span class="o">=</span> <span class="n">MAX_Y</span>
+</span><span data-line="92">        <span class="k">elif</span> <span class="n">y</span><span class="o">&lt;</span><span class="n">MIN_Y</span><span class="p">:</span>
+</span><span data-line="93">            <span class="n">y</span> <span class="o">=</span> <span class="n">MIN_Y</span>
+</span><span data-line="94">        <span class="k">if</span>  <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="p">[(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)):</span> <span class="c1"># not already present:</span>
+</span><span data-line="95">            <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>   <span class="c1"># append pixel to array</span>
+</span><span data-line="96">            <span class="k">return</span> <span class="kc">True</span>
+</span><span data-line="97">        <span class="k">return</span> <span class="kc">False</span></div>
 
-</span><span data-line="128">
+</span><span data-line="98">
 <div class="viewcode-block" id="InterestingPixels.new_pixel">
 <a class="viewcode-back" href="../../thermocam.html#thermocam.roi.InterestingPixels.new_pixel">[docs]</a>
-</span><span data-line="129">    <span class="k">def</span><span class="w"> </span><span class="nf">new_pixel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="130"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="131"><span class="sd">        Implemented to make publishing new pixel easier</span>
-</span><span data-line="132">
-</span><span data-line="133"><span class="sd">        Returns</span>
-</span><span data-line="134"><span class="sd">        -------</span>
-</span><span data-line="135"><span class="sd">        string</span>
-</span><span data-line="136"><span class="sd">            last pixel coordinates formatted as &quot;x y&quot;</span>
-</span><span data-line="137">
-</span><span data-line="138"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="139">
-</span><span data-line="140">        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span></div>
+</span><span data-line="99">    <span class="k">def</span><span class="w"> </span><span class="nf">new_pixel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="100"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="101"><span class="sd">        Implemented to make publishing new pixel easier</span>
+</span><span data-line="102">
+</span><span data-line="103"><span class="sd">        Returns</span>
+</span><span data-line="104"><span class="sd">        -------</span>
+</span><span data-line="105"><span class="sd">        string</span>
+</span><span data-line="106"><span class="sd">            last pixel coordinates formatted as &quot;x y&quot;</span>
+</span><span data-line="107">
+</span><span data-line="108"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="109">
+</span><span data-line="110">        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span></div>
 
-</span><span data-line="141">
-</span><span data-line="142">
+</span><span data-line="111">
+</span><span data-line="112">
 <div class="viewcode-block" id="InterestingPixels.update_data">
 <a class="viewcode-back" href="../../thermocam.html#thermocam.roi.InterestingPixels.update_data">[docs]</a>
-</span><span data-line="143">    <span class="k">def</span><span class="w"> </span><span class="nf">update_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
-</span><span data-line="144"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="145"><span class="sd">        Get pixel(s) data from message</span>
-</span><span data-line="146"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="147">
-</span><span data-line="148">        <span class="k">try</span><span class="p">:</span>
-</span><span data-line="149">            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-</span><span data-line="150">            <span class="c1"># get current pixels and data from message</span>
-</span><span data-line="151">            <span class="n">current</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)))</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">msg</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)]</span>
-</span><span data-line="152">            <span class="n">t</span> <span class="o">=</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
-</span><span data-line="153">
-</span><span data-line="154">            <span class="c1"># now update value in dictionary or add new one if not present</span>
-</span><span data-line="155">            <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">current</span><span class="p">:</span>
-</span><span data-line="156">                <span class="n">pixel</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
-</span><span data-line="157">                <span class="k">if</span> <span class="n">pixel</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixels_data</span><span class="p">:</span> <span class="c1"># add to dict and make new line</span>
-</span><span data-line="158">                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Receiving new pixel: </span><span class="si">{</span><span class="n">pixel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span data-line="159">                    <span class="c1"># create line for its data</span>
-</span><span data-line="160">                    <span class="n">l</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">label</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">pixel</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,))</span>
-</span><span data-line="161">                    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;upper left&quot;</span><span class="p">,</span> <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
-</span><span data-line="162">                    <span class="c1"># add (empty) data and Line2D to dict</span>
-</span><span data-line="163">                    <span class="bp">self</span><span class="o">.</span><span class="n">pixels_data</span><span class="p">[</span><span class="n">pixel</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;times&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;temps&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;line&quot;</span><span class="p">:</span> <span class="n">l</span><span class="p">}</span>
-</span><span data-line="164">                <span class="c1"># add values (temperature and time)</span>
-</span><span data-line="165">                <span class="n">single</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixels_data</span><span class="p">[</span><span class="n">pixel</span><span class="p">]</span>
-</span><span data-line="166">                <span class="n">single</span><span class="p">[</span><span class="s2">&quot;times&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-</span><span data-line="167">                <span class="n">single</span><span class="p">[</span><span class="s2">&quot;temps&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
-</span><span data-line="168">                <span class="n">single</span><span class="p">[</span><span class="s2">&quot;line&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">single</span><span class="p">[</span><span class="s2">&quot;times&quot;</span><span class="p">],</span> <span class="n">single</span><span class="p">[</span><span class="s2">&quot;temps&quot;</span><span class="p">])</span>
-</span><span data-line="169">
-</span><span data-line="170">            <span class="c1"># update plot axes</span>
-</span><span data-line="171">            <span class="n">ax</span><span class="o">.</span><span class="n">relim</span><span class="p">()</span>
-</span><span data-line="172">            <span class="n">ax</span><span class="o">.</span><span class="n">autoscale_view</span><span class="p">()</span>
-</span><span data-line="173">        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
-</span><span data-line="174">            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Received pixel data has invalid format: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</span><span data-line="113">    <span class="k">def</span><span class="w"> </span><span class="nf">update_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+</span><span data-line="114"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="115"><span class="sd">        Get pixel(s) data from message and update live plot</span>
+</span><span data-line="116"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="117">
+</span><span data-line="118">        <span class="k">try</span><span class="p">:</span>
+</span><span data-line="119">            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</span><span data-line="120">            <span class="c1"># get current pixels and data from message</span>
+</span><span data-line="121">            <span class="n">current</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)))</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">msg</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)]</span>
+</span><span data-line="122">            <span class="n">t</span> <span class="o">=</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+</span><span data-line="123">
+</span><span data-line="124">            <span class="c1"># now update value in dictionary or add new one if not present</span>
+</span><span data-line="125">            <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">current</span><span class="p">:</span>
+</span><span data-line="126">                <span class="n">pixel</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+</span><span data-line="127">                <span class="k">if</span> <span class="n">pixel</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixels_data</span><span class="p">:</span> <span class="c1"># add to dict and make new line</span>
+</span><span data-line="128">                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Receiving new pixel: </span><span class="si">{</span><span class="n">pixel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span data-line="129">                    <span class="c1"># create line for its data</span>
+</span><span data-line="130">                    <span class="n">l</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">label</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">pixel</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,))</span>
+</span><span data-line="131">                    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;upper left&quot;</span><span class="p">,</span> <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+</span><span data-line="132">                    <span class="c1"># add (empty) data and Line2D to dict</span>
+</span><span data-line="133">                    <span class="bp">self</span><span class="o">.</span><span class="n">pixels_data</span><span class="p">[</span><span class="n">pixel</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;times&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;temps&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;line&quot;</span><span class="p">:</span> <span class="n">l</span><span class="p">}</span>
+</span><span data-line="134">                <span class="c1"># add values (temperature and time)</span>
+</span><span data-line="135">                <span class="n">single</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixels_data</span><span class="p">[</span><span class="n">pixel</span><span class="p">]</span>
+</span><span data-line="136">                <span class="n">single</span><span class="p">[</span><span class="s2">&quot;times&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+</span><span data-line="137">                <span class="n">single</span><span class="p">[</span><span class="s2">&quot;temps&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+</span><span data-line="138">                <span class="n">single</span><span class="p">[</span><span class="s2">&quot;line&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">single</span><span class="p">[</span><span class="s2">&quot;times&quot;</span><span class="p">],</span> <span class="n">single</span><span class="p">[</span><span class="s2">&quot;temps&quot;</span><span class="p">])</span>
+</span><span data-line="139">
+</span><span data-line="140">            <span class="c1"># update plot axes</span>
+</span><span data-line="141">            <span class="n">ax</span><span class="o">.</span><span class="n">relim</span><span class="p">()</span>
+</span><span data-line="142">            <span class="n">ax</span><span class="o">.</span><span class="n">autoscale_view</span><span class="p">()</span>
+</span><span data-line="143">        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+</span><span data-line="144">            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Received pixel data has invalid format: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 </div>
 
-</span><span data-line="175">
-</span><span data-line="176">
-</span><span data-line="177">
+</span><span data-line="145">
+</span><span data-line="146">
+</span><span data-line="147">
 <div class="viewcode-block" id="InterestingArea">
 <a class="viewcode-back" href="../../thermocam.html#thermocam.roi.InterestingArea">[docs]</a>
-</span><span data-line="178"><span class="k">class</span><span class="w"> </span><span class="nc">InterestingArea</span><span class="p">:</span>
-</span><span data-line="179"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="180"><span class="sd">    Class used to define the interesting area</span>
-</span><span data-line="181"><span class="sd">    &quot;&quot;&quot;</span>
-</span><span data-line="182">
-</span><span data-line="183">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="184">        <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-</span><span data-line="185">        <span class="bp">self</span><span class="o">.</span><span class="n">area_data</span> <span class="o">=</span> <span class="p">{}</span> <span class="c1"># will contain the area as a key and as a value another dict with</span>
-</span><span data-line="186">               <span class="c1"># the times, values and Line2D (even though only one area at the time is defined)</span>
-</span><span data-line="187">
+</span><span data-line="148"><span class="k">class</span><span class="w"> </span><span class="nc">InterestingArea</span><span class="p">:</span>
+</span><span data-line="149"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="150"><span class="sd">    Class used to define the interesting area</span>
+</span><span data-line="151"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="152">
+</span><span data-line="153">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="154">        <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+</span><span data-line="155">        <span class="bp">self</span><span class="o">.</span><span class="n">area_data</span> <span class="o">=</span> <span class="p">{}</span> <span class="c1"># will contain the area as a key and as a value another dict with</span>
+</span><span data-line="156">               <span class="c1"># the times, values and Line2D (even though only one area at the time is defined)</span>
+</span><span data-line="157">
 <div class="viewcode-block" id="InterestingArea.defined">
 <a class="viewcode-back" href="../../thermocam.html#thermocam.roi.InterestingArea.defined">[docs]</a>
-</span><span data-line="188">    <span class="k">def</span><span class="w"> </span><span class="nf">defined</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="189"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return true if area is currently defined</span>
-</span><span data-line="190"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="191">        <span class="c1"># TODO: there surely is a better way</span>
-</span><span data-line="192">        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">)</span><span class="o">!=</span><span class="mi">0</span></div>
+</span><span data-line="158">    <span class="k">def</span><span class="w"> </span><span class="nf">defined</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="159"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return true if area is currently defined</span>
+</span><span data-line="160"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="161">        <span class="c1"># TODO: there surely is a better way</span>
+</span><span data-line="162">        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">)</span><span class="o">!=</span><span class="mi">0</span></div>
 
-</span><span data-line="193">
+</span><span data-line="163">
 <div class="viewcode-block" id="InterestingArea.pub_area">
 <a class="viewcode-back" href="../../thermocam.html#thermocam.roi.InterestingArea.pub_area">[docs]</a>
-</span><span data-line="194">    <span class="k">def</span><span class="w"> </span><span class="nf">pub_area</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="195"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="196"><span class="sd">        Implemented to make publishing easier: it has to be formatted as</span>
-</span><span data-line="197"><span class="sd">        &quot;x_left y_low w h&quot;</span>
-</span><span data-line="198"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="199">
-</span><span data-line="200">        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span> <span class="c1"># it&#39;s a bit ugly</span></div>
+</span><span data-line="164">    <span class="k">def</span><span class="w"> </span><span class="nf">pub_area</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="165"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="166"><span class="sd">        Implemented to make publishing easier: it has to be formatted as</span>
+</span><span data-line="167"><span class="sd">        &quot;x_left y_low w h&quot;</span>
+</span><span data-line="168"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="169">
+</span><span data-line="170">        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span> <span class="c1"># it&#39;s a bit ugly</span></div>
 
-</span><span data-line="201">
-<div class="viewcode-block" id="InterestingArea.out_data">
-<a class="viewcode-back" href="../../thermocam.html#thermocam.roi.InterestingArea.out_data">[docs]</a>
-</span><span data-line="202">    <span class="k">def</span><span class="w"> </span><span class="nf">out_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="203"><span class="w">        </span><span class="sd">&quot;&quot;&quot; Return a string with data to be written in output file</span>
-</span><span data-line="204"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="205">        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">][:]</span>
-</span><span data-line="206">        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_data</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">)]</span>
-</span><span data-line="207">
-</span><span data-line="208">        <span class="n">avg</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;avg&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-</span><span data-line="209">        <span class="n">min_T</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-</span><span data-line="210">        <span class="n">max_T</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-</span><span data-line="211">        <span class="n">out</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">h</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">avg</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">min_T</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">max_T</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span data-line="212">        <span class="k">return</span> <span class="n">out</span></div>
-
-</span><span data-line="213">
-<div class="viewcode-block" id="InterestingArea.cleanup">
-<a class="viewcode-back" href="../../thermocam.html#thermocam.roi.InterestingArea.cleanup">[docs]</a>
-</span><span data-line="214">    <span class="k">def</span><span class="w"> </span><span class="nf">cleanup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">):</span>
-</span><span data-line="215"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="216"><span class="sd">        Delete area drawing from axes</span>
-</span><span data-line="217">
-</span><span data-line="218"><span class="sd">        Parameters</span>
-</span><span data-line="219"><span class="sd">        ----------</span>
-</span><span data-line="220"><span class="sd">        ax : matplotlib Axes</span>
-</span><span data-line="221"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="222">
-</span><span data-line="223">        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">patches</span><span class="p">):</span> <span class="c1"># remove previously drawn patches</span>
-</span><span data-line="224">            <span class="n">p</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span></div>
-
-</span><span data-line="225">
-<div class="viewcode-block" id="InterestingArea.draw_on">
-<a class="viewcode-back" href="../../thermocam.html#thermocam.roi.InterestingArea.draw_on">[docs]</a>
-</span><span data-line="226">    <span class="k">def</span><span class="w"> </span><span class="nf">draw_on</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">):</span>
-</span><span data-line="227"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="228"><span class="sd">        Draw patch coresponding to selected area</span>
-</span><span data-line="229">
-</span><span data-line="230"><span class="sd">        Parameters</span>
-</span><span data-line="231"><span class="sd">        ----------</span>
-</span><span data-line="232"><span class="sd">        ax : matplotlib Axes</span>
-</span><span data-line="233"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="234">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
-</span><span data-line="235">            <span class="bp">self</span><span class="o">.</span><span class="n">cleanup</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span> <span class="c1"># TODO: this has been added to prevent double drawing, but maybe there is a better way</span>
-</span><span data-line="236">            <span class="n">x_left</span><span class="p">,</span> <span class="n">y_low</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">][:]</span>
-</span><span data-line="237">            <span class="n">rect</span> <span class="o">=</span> <span class="n">patches</span><span class="o">.</span><span class="n">Rectangle</span><span class="p">((</span><span class="n">x_left</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">y_low</span><span class="o">-</span><span class="mf">0.5</span><span class="p">),</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span>
-</span><span data-line="238">                                     <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">)</span>
-</span><span data-line="239">            <span class="n">ax</span><span class="o">.</span><span class="n">add_patch</span><span class="p">(</span><span class="n">rect</span><span class="p">)</span></div>
-
-</span><span data-line="240">
+</span><span data-line="171">
 <div class="viewcode-block" id="InterestingArea.get_from_str">
 <a class="viewcode-back" href="../../thermocam.html#thermocam.roi.InterestingArea.get_from_str">[docs]</a>
-</span><span data-line="241">    <span class="k">def</span><span class="w"> </span><span class="nf">get_from_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
-</span><span data-line="242"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="243"><span class="sd">        If not none, get area definition from MQTT message as x_left, y_low, width, height</span>
-</span><span data-line="244">
-</span><span data-line="245"><span class="sd">        Parameters</span>
-</span><span data-line="246"><span class="sd">        ----------</span>
-</span><span data-line="247"><span class="sd">        msg : str</span>
-</span><span data-line="248"><span class="sd">              received MQTT message as a string</span>
-</span><span data-line="249"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="250">
-</span><span data-line="251">        <span class="k">try</span><span class="p">:</span>
-</span><span data-line="252">            <span class="c1"># coordinates MUST be integers</span>
-</span><span data-line="253">            <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">msg</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)))],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-</span><span data-line="254">            <span class="c1"># NOTE: self.a is redefined as the new area, it&#39;s not appended as in the case of </span>
-</span><span data-line="255">            <span class="c1">#       the pixels: this is beacause only one area is defined</span>
-</span><span data-line="256">            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Current area: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span data-line="257">        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-</span><span data-line="258">            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Received area has invalid format: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">, still using previous area&quot;</span><span class="p">)</span></div>
+</span><span data-line="172">    <span class="k">def</span><span class="w"> </span><span class="nf">get_from_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+</span><span data-line="173"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="174"><span class="sd">        If not none, get area definition from MQTT message as x_left, y_low, width, height</span>
+</span><span data-line="175">
+</span><span data-line="176"><span class="sd">        Parameters</span>
+</span><span data-line="177"><span class="sd">        ----------</span>
+</span><span data-line="178"><span class="sd">        msg : str</span>
+</span><span data-line="179"><span class="sd">              received MQTT message as a string</span>
+</span><span data-line="180"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="181">
+</span><span data-line="182">        <span class="k">try</span><span class="p">:</span>
+</span><span data-line="183">            <span class="c1"># coordinates MUST be integers</span>
+</span><span data-line="184">            <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">msg</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)))],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+</span><span data-line="185">            <span class="c1"># NOTE: self.a is redefined as the new area, it&#39;s not appended as in the case of</span>
+</span><span data-line="186">            <span class="c1">#       the pixels: only one area at the time is defined</span>
+</span><span data-line="187">            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Current area: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span data-line="188">        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+</span><span data-line="189">            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Received area has invalid format: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">, still using previous area&quot;</span><span class="p">)</span></div>
 
-</span><span data-line="259">
+</span><span data-line="190">
 <div class="viewcode-block" id="InterestingArea.handle_mqtt">
 <a class="viewcode-back" href="../../thermocam.html#thermocam.roi.InterestingArea.handle_mqtt">[docs]</a>
-</span><span data-line="260">    <span class="k">def</span><span class="w"> </span><span class="nf">handle_mqtt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">ax</span><span class="p">):</span>
-</span><span data-line="261"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="262"><span class="sd">        Get current area from MQTT message.</span>
-</span><span data-line="263">
-</span><span data-line="264"><span class="sd">        If no area is defined (&quot;none&quot;) remove drawing, else (if message can be correctly parsed)</span>
-</span><span data-line="265"><span class="sd">        redefine area and then remove previous drawing</span>
-</span><span data-line="266">
-</span><span data-line="267"><span class="sd">        Parameters</span>
-</span><span data-line="268"><span class="sd">        ----------</span>
-</span><span data-line="269"><span class="sd">        msg : str</span>
-</span><span data-line="270"><span class="sd">              received MQTT message as a string</span>
-</span><span data-line="271"><span class="sd">        ax : matplotlib Axes</span>
-</span><span data-line="272"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="273">
-</span><span data-line="274">        <span class="k">if</span> <span class="n">msg</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
-</span><span data-line="275">            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No area is defined.&quot;</span><span class="p">)</span>
-</span><span data-line="276">            <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-</span><span data-line="277">            <span class="bp">self</span><span class="o">.</span><span class="n">area_data</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span data-line="278">            <span class="bp">self</span><span class="o">.</span><span class="n">cleanup</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
-</span><span data-line="279">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="280">            <span class="bp">self</span><span class="o">.</span><span class="n">get_from_str</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-</span><span data-line="281">            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Current area: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</span><span data-line="191">    <span class="k">def</span><span class="w"> </span><span class="nf">handle_mqtt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+</span><span data-line="192"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="193"><span class="sd">        Get current area from MQTT message.</span>
+</span><span data-line="194">
+</span><span data-line="195"><span class="sd">        If no area is defined (&quot;none&quot;) remove drawing, else (if message can be correctly parsed)</span>
+</span><span data-line="196"><span class="sd">        redefine area and then remove previous drawing</span>
+</span><span data-line="197">
+</span><span data-line="198"><span class="sd">        Parameters</span>
+</span><span data-line="199"><span class="sd">        ----------</span>
+</span><span data-line="200"><span class="sd">        msg : str</span>
+</span><span data-line="201"><span class="sd">              received MQTT message as a string</span>
+</span><span data-line="202"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="203">
+</span><span data-line="204">        <span class="k">if</span> <span class="n">msg</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
+</span><span data-line="205">            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No area is defined.&quot;</span><span class="p">)</span>
+</span><span data-line="206">            <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+</span><span data-line="207">            <span class="bp">self</span><span class="o">.</span><span class="n">area_data</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span data-line="208">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="209">            <span class="bp">self</span><span class="o">.</span><span class="n">get_from_str</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</span><span data-line="210">            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Current area: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
-</span><span data-line="282">
+</span><span data-line="211">
 <div class="viewcode-block" id="InterestingArea.get_from_click">
 <a class="viewcode-back" href="../../thermocam.html#thermocam.roi.InterestingArea.get_from_click">[docs]</a>
-</span><span data-line="283">    <span class="k">def</span><span class="w"> </span><span class="nf">get_from_click</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
-</span><span data-line="284"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Define area from mouse clicks</span>
-</span><span data-line="285">
-</span><span data-line="286"><span class="sd">        Parameters</span>
-</span><span data-line="287"><span class="sd">        ----------</span>
-</span><span data-line="288"><span class="sd">        c : array-like with shape (2, 2)</span>
-</span><span data-line="289"><span class="sd">            contains the coordinates of the two clicked points</span>
-</span><span data-line="290"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="291">        <span class="n">x_left</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
-</span><span data-line="292">        <span class="n">y_low</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
-</span><span data-line="293">        <span class="n">w</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]))</span><span class="o">+</span><span class="mi">1</span>
-</span><span data-line="294">        <span class="n">h</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]))</span><span class="o">+</span><span class="mi">1</span>
-</span><span data-line="295">
-</span><span data-line="296">        <span class="c1"># sanity checks</span>
-</span><span data-line="297">        <span class="k">if</span> <span class="n">x_left</span><span class="o">&gt;</span><span class="n">MAX_X</span><span class="p">:</span>
-</span><span data-line="298">            <span class="n">x_left</span> <span class="o">=</span> <span class="n">MAX_X</span>
-</span><span data-line="299">        <span class="k">elif</span> <span class="n">x_left</span><span class="o">&lt;</span><span class="n">MIN_X</span><span class="p">:</span>
-</span><span data-line="300">            <span class="n">x_left</span> <span class="o">=</span> <span class="n">MIN_X</span>
-</span><span data-line="301">        <span class="k">if</span> <span class="n">y_low</span><span class="o">&gt;</span><span class="n">MAX_Y</span><span class="p">:</span>
-</span><span data-line="302">            <span class="n">y_low</span> <span class="o">=</span> <span class="n">MAX_Y</span>
-</span><span data-line="303">        <span class="k">elif</span> <span class="n">y_low</span><span class="o">&lt;</span><span class="n">MIN_Y</span><span class="p">:</span>
-</span><span data-line="304">            <span class="n">y_low</span> <span class="o">=</span> <span class="n">MIN_Y</span>
-</span><span data-line="305">
-</span><span data-line="306">        <span class="k">if</span> <span class="n">x_left</span><span class="o">+</span><span class="n">w</span><span class="o">&gt;</span><span class="n">MAX_X</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span>
-</span><span data-line="307">            <span class="n">w</span> <span class="o">=</span> <span class="n">MAX_X</span><span class="o">+</span><span class="mi">1</span><span class="o">-</span><span class="n">x_left</span>
-</span><span data-line="308">        <span class="k">if</span> <span class="n">y_low</span><span class="o">+</span><span class="n">h</span><span class="o">&gt;</span><span class="n">MAX_Y</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span>
-</span><span data-line="309">            <span class="n">h</span> <span class="o">=</span> <span class="n">MAX_Y</span><span class="o">+</span><span class="mi">1</span><span class="o">-</span><span class="n">y_low</span>
-</span><span data-line="310">
-</span><span data-line="311">        <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">x_left</span><span class="p">,</span> <span class="n">y_low</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">)],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span></div>
+</span><span data-line="212">    <span class="k">def</span><span class="w"> </span><span class="nf">get_from_click</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+</span><span data-line="213"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Define area from mouse clicks</span>
+</span><span data-line="214">
+</span><span data-line="215"><span class="sd">        Parameters</span>
+</span><span data-line="216"><span class="sd">        ----------</span>
+</span><span data-line="217"><span class="sd">        c : array-like with shape (2, 2)</span>
+</span><span data-line="218"><span class="sd">            contains the coordinates of the two clicked points</span>
+</span><span data-line="219"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="220">        <span class="n">x_left</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+</span><span data-line="221">        <span class="n">y_low</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+</span><span data-line="222">        <span class="n">w</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]))</span><span class="o">+</span><span class="mi">1</span>
+</span><span data-line="223">        <span class="n">h</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]))</span><span class="o">+</span><span class="mi">1</span>
+</span><span data-line="224">
+</span><span data-line="225">        <span class="c1"># sanity checks</span>
+</span><span data-line="226">        <span class="k">if</span> <span class="n">x_left</span><span class="o">&gt;</span><span class="n">MAX_X</span><span class="p">:</span>
+</span><span data-line="227">            <span class="n">x_left</span> <span class="o">=</span> <span class="n">MAX_X</span>
+</span><span data-line="228">        <span class="k">elif</span> <span class="n">x_left</span><span class="o">&lt;</span><span class="n">MIN_X</span><span class="p">:</span>
+</span><span data-line="229">            <span class="n">x_left</span> <span class="o">=</span> <span class="n">MIN_X</span>
+</span><span data-line="230">        <span class="k">if</span> <span class="n">y_low</span><span class="o">&gt;</span><span class="n">MAX_Y</span><span class="p">:</span>
+</span><span data-line="231">            <span class="n">y_low</span> <span class="o">=</span> <span class="n">MAX_Y</span>
+</span><span data-line="232">        <span class="k">elif</span> <span class="n">y_low</span><span class="o">&lt;</span><span class="n">MIN_Y</span><span class="p">:</span>
+</span><span data-line="233">            <span class="n">y_low</span> <span class="o">=</span> <span class="n">MIN_Y</span>
+</span><span data-line="234">
+</span><span data-line="235">        <span class="k">if</span> <span class="n">x_left</span><span class="o">+</span><span class="n">w</span><span class="o">&gt;</span><span class="n">MAX_X</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span>
+</span><span data-line="236">            <span class="n">w</span> <span class="o">=</span> <span class="n">MAX_X</span><span class="o">+</span><span class="mi">1</span><span class="o">-</span><span class="n">x_left</span>
+</span><span data-line="237">        <span class="k">if</span> <span class="n">y_low</span><span class="o">+</span><span class="n">h</span><span class="o">&gt;</span><span class="n">MAX_Y</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span>
+</span><span data-line="238">            <span class="n">h</span> <span class="o">=</span> <span class="n">MAX_Y</span><span class="o">+</span><span class="mi">1</span><span class="o">-</span><span class="n">y_low</span>
+</span><span data-line="239">
+</span><span data-line="240">        <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">x_left</span><span class="p">,</span> <span class="n">y_low</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">)],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span></div>
 
-</span><span data-line="312">
+</span><span data-line="241">
 <div class="viewcode-block" id="InterestingArea.update_data">
 <a class="viewcode-back" href="../../thermocam.html#thermocam.roi.InterestingArea.update_data">[docs]</a>
-</span><span data-line="313">    <span class="k">def</span><span class="w"> </span><span class="nf">update_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
-</span><span data-line="314"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="315"><span class="sd">        Get area data from message</span>
-</span><span data-line="316"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="317">        <span class="k">try</span><span class="p">:</span>
-</span><span data-line="318">            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-</span><span data-line="319">            <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;(\w+):\s(-?\d+\.?\d?)&#39;</span>
-</span><span data-line="320">            <span class="n">matches</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
-</span><span data-line="321">            <span class="c1"># Convert to dictionary, converting numbers to float or int automatically</span>
-</span><span data-line="322">            <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">if</span> <span class="s2">&quot;.&quot;</span> <span class="ow">in</span> <span class="n">v</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">}</span>
-</span><span data-line="323">            <span class="c1"># values should be appended only if they are all present</span>
-</span><span data-line="324">            <span class="k">if</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;avg&quot;</span><span class="p">]):</span>
-</span><span data-line="325">                <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
-</span><span data-line="326">                <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_data</span><span class="p">:</span>
-</span><span data-line="327">                    <span class="c1"># create 2DLine for min, max and avg</span>
-</span><span data-line="328">                    <span class="n">l_avg</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$T_</span><span class="si">{avg}</span><span class="s2">$&quot;</span><span class="p">)</span>
-</span><span data-line="329">                    <span class="n">l_min</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$T_</span><span class="si">{min}</span><span class="s2">$&quot;</span><span class="p">)</span>
-</span><span data-line="330">                    <span class="n">l_max</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$T_</span><span class="si">{max}</span><span class="s2">$&quot;</span><span class="p">)</span>
-</span><span data-line="331">                    <span class="k">if</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_legend</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="332">                        <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;upper left&quot;</span><span class="p">,</span> <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mf">0.5</span><span class="p">))</span>
-</span><span data-line="333">                    <span class="bp">self</span><span class="o">.</span><span class="n">area_data</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">)]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;times&quot;</span> <span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;avg&quot;</span> <span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;min&quot;</span> <span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;max&quot;</span> <span class="p">:</span> <span class="p">[],</span>
-</span><span data-line="334">                                            <span class="s2">&quot;l_avg&quot;</span> <span class="p">:</span> <span class="n">l_avg</span><span class="p">,</span> <span class="s2">&quot;l_min&quot;</span> <span class="p">:</span> <span class="n">l_min</span><span class="p">,</span> <span class="s2">&quot;l_max&quot;</span> <span class="p">:</span> <span class="n">l_max</span><span class="p">}</span>
-</span><span data-line="335">                <span class="c1"># only the currently defined area data is getting updated</span>
-</span><span data-line="336">                <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_data</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">)]</span>
-</span><span data-line="337">                <span class="n">a</span><span class="p">[</span><span class="s2">&quot;times&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-</span><span data-line="338">                <span class="n">a</span><span class="p">[</span><span class="s2">&quot;avg&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;avg&quot;</span><span class="p">])</span>
-</span><span data-line="339">                <span class="n">a</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">])</span>
-</span><span data-line="340">                <span class="n">a</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">])</span>
-</span><span data-line="341">                <span class="n">a</span><span class="p">[</span><span class="s2">&quot;l_avg&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="s2">&quot;times&quot;</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;avg&quot;</span><span class="p">])</span>
-</span><span data-line="342">                <span class="n">a</span><span class="p">[</span><span class="s2">&quot;l_min&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="s2">&quot;times&quot;</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">])</span>
-</span><span data-line="343">                <span class="n">a</span><span class="p">[</span><span class="s2">&quot;l_max&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="s2">&quot;times&quot;</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">])</span>
-</span><span data-line="344">
-</span><span data-line="345">                <span class="c1"># update plot axes</span>
-</span><span data-line="346">                <span class="n">ax</span><span class="o">.</span><span class="n">relim</span><span class="p">()</span>
-</span><span data-line="347">                <span class="n">ax</span><span class="o">.</span><span class="n">autoscale_view</span><span class="p">()</span>
-</span><span data-line="348">
-</span><span data-line="349">        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
-</span><span data-line="350">            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Received area data has invalid format: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</span><span data-line="242">    <span class="k">def</span><span class="w"> </span><span class="nf">update_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+</span><span data-line="243"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="244"><span class="sd">        Get area data from message and update live plot</span>
+</span><span data-line="245"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="246">        <span class="k">try</span><span class="p">:</span>
+</span><span data-line="247">            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</span><span data-line="248">            <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;(\w+):\s(-?\d+\.?\d?)&#39;</span>
+</span><span data-line="249">            <span class="n">matches</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+</span><span data-line="250">            <span class="c1"># Convert to dictionary, converting numbers to float or int automatically</span>
+</span><span data-line="251">            <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">if</span> <span class="s2">&quot;.&quot;</span> <span class="ow">in</span> <span class="n">v</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">}</span>
+</span><span data-line="252">            <span class="c1"># values should be appended only if they are all present</span>
+</span><span data-line="253">            <span class="k">if</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;avg&quot;</span><span class="p">]):</span>
+</span><span data-line="254">                <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+</span><span data-line="255">                <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_data</span><span class="p">:</span>
+</span><span data-line="256">                    <span class="c1"># create 2DLine for min, max and avg</span>
+</span><span data-line="257">                    <span class="n">l_avg</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$T_</span><span class="si">{avg}</span><span class="s2">$&quot;</span><span class="p">)</span>
+</span><span data-line="258">                    <span class="n">l_min</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$T_</span><span class="si">{min}</span><span class="s2">$&quot;</span><span class="p">)</span>
+</span><span data-line="259">                    <span class="n">l_max</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$T_</span><span class="si">{max}</span><span class="s2">$&quot;</span><span class="p">)</span>
+</span><span data-line="260">                    <span class="k">if</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_legend</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="261">                        <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;upper left&quot;</span><span class="p">,</span> <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mf">0.5</span><span class="p">))</span>
+</span><span data-line="262">                    <span class="bp">self</span><span class="o">.</span><span class="n">area_data</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">)]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;times&quot;</span> <span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;avg&quot;</span> <span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;min&quot;</span> <span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;max&quot;</span> <span class="p">:</span> <span class="p">[],</span>
+</span><span data-line="263">                                            <span class="s2">&quot;l_avg&quot;</span> <span class="p">:</span> <span class="n">l_avg</span><span class="p">,</span> <span class="s2">&quot;l_min&quot;</span> <span class="p">:</span> <span class="n">l_min</span><span class="p">,</span> <span class="s2">&quot;l_max&quot;</span> <span class="p">:</span> <span class="n">l_max</span><span class="p">}</span>
+</span><span data-line="264">                <span class="c1"># only the currently defined area data is getting updated</span>
+</span><span data-line="265">                <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_data</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">)]</span>
+</span><span data-line="266">                <span class="n">a</span><span class="p">[</span><span class="s2">&quot;times&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span><span data-line="267">                <span class="n">a</span><span class="p">[</span><span class="s2">&quot;avg&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;avg&quot;</span><span class="p">])</span>
+</span><span data-line="268">                <span class="n">a</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">])</span>
+</span><span data-line="269">                <span class="n">a</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">])</span>
+</span><span data-line="270">                <span class="n">a</span><span class="p">[</span><span class="s2">&quot;l_avg&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="s2">&quot;times&quot;</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;avg&quot;</span><span class="p">])</span>
+</span><span data-line="271">                <span class="n">a</span><span class="p">[</span><span class="s2">&quot;l_min&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="s2">&quot;times&quot;</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">])</span>
+</span><span data-line="272">                <span class="n">a</span><span class="p">[</span><span class="s2">&quot;l_max&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="s2">&quot;times&quot;</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">])</span>
+</span><span data-line="273">
+</span><span data-line="274">                <span class="c1"># update plot axes</span>
+</span><span data-line="275">                <span class="n">ax</span><span class="o">.</span><span class="n">relim</span><span class="p">()</span>
+</span><span data-line="276">                <span class="n">ax</span><span class="o">.</span><span class="n">autoscale_view</span><span class="p">()</span>
+</span><span data-line="277">
+</span><span data-line="278">        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+</span><span data-line="279">            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Received area data has invalid format: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+</span><span data-line="280">
+<div class="viewcode-block" id="InterestingArea.out_data">
+<a class="viewcode-back" href="../../thermocam.html#thermocam.roi.InterestingArea.out_data">[docs]</a>
+</span><span data-line="281">    <span class="k">def</span><span class="w"> </span><span class="nf">out_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="282"><span class="w">        </span><span class="sd">&quot;&quot;&quot; Return a string with data to be written in output file</span>
+</span><span data-line="283"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="284">        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">][:]</span>
+</span><span data-line="285">        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_data</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">)]</span>
+</span><span data-line="286">
+</span><span data-line="287">        <span class="n">avg</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;avg&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</span><span data-line="288">        <span class="n">min_T</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</span><span data-line="289">        <span class="n">max_T</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</span><span data-line="290">        <span class="n">out</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">h</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">avg</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">min_T</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">max_T</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="291">        <span class="k">return</span> <span class="n">out</span></div>
 </div>
 
 </span></pre></div>

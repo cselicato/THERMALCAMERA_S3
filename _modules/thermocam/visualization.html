@@ -108,156 +108,178 @@ data-aria-dark="Switch to auto color mode">
 <span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 </span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 </span><span data-line="3"><span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">CheckButtons</span>
-</span><span data-line="4">
+</span><span data-line="4"><span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">patches</span>
 </span><span data-line="5">
+</span><span data-line="6">
 <div class="viewcode-block" id="Display">
 <a class="viewcode-back" href="../../thermocam.html#thermocam.visualization.Display">[docs]</a>
-</span><span data-line="6"><span class="k">class</span><span class="w"> </span><span class="nc">Display</span><span class="p">():</span>
-</span><span data-line="7"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="8"><span class="sd">    Display to visualize data received from the thermal camera</span>
-</span><span data-line="9">
-</span><span data-line="10"><span class="sd">    On the left, it displays the received thermal image and buttons to take </span>
-</span><span data-line="11"><span class="sd">    video and select regions of interest.</span>
-</span><span data-line="12"><span class="sd">    On the right, it plots the received pixel(s) and area temperatures.</span>
-</span><span data-line="13"><span class="sd">    &quot;&quot;&quot;</span>
-</span><span data-line="14">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">)):</span>
-</span><span data-line="15">        <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
-</span><span data-line="16">        <span class="bp">self</span><span class="o">.</span><span class="n">img_fig</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_fig</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">canvas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_setup_fig</span><span class="p">()</span>
-</span><span data-line="17">        <span class="bp">self</span><span class="o">.</span><span class="n">_create_axes</span><span class="p">()</span>
-</span><span data-line="18">        <span class="bp">self</span><span class="o">.</span><span class="n">_init_image</span><span class="p">()</span>
-</span><span data-line="19">        <span class="bp">self</span><span class="o">.</span><span class="n">_init_plots</span><span class="p">()</span>
-</span><span data-line="20">        <span class="bp">self</span><span class="o">.</span><span class="n">_add_buttons</span><span class="p">()</span>
-</span><span data-line="21">        <span class="bp">self</span><span class="o">.</span><span class="n">_add_text</span><span class="p">()</span>
-</span><span data-line="22">        <span class="bp">self</span><span class="o">.</span><span class="n">_cbar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_colorbar</span><span class="p">()</span>
-</span><span data-line="23">
-</span><span data-line="24">    <span class="k">def</span><span class="w"> </span><span class="nf">_setup_fig</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="25"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Create subfigures in the main figure</span>
-</span><span data-line="26">
-</span><span data-line="27"><span class="sd">        Returns</span>
-</span><span data-line="28"><span class="sd">        -------</span>
-</span><span data-line="29"><span class="sd">        img_fig</span>
-</span><span data-line="30"><span class="sd">            subfigure for thermal image</span>
-</span><span data-line="31"><span class="sd">        data_fig</span>
-</span><span data-line="32"><span class="sd">            subfigure for plots of live data</span>
-</span><span data-line="33"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="34">        <span class="n">fig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span>
-</span><span data-line="35">        <span class="n">gs</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_gridspec</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">width_ratios</span><span class="o">=</span><span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">],</span> <span class="n">wspace</span><span class="o">=</span><span class="mf">0.15</span><span class="p">)</span>
-</span><span data-line="36">        <span class="n">img_fig</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subfigure</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-</span><span data-line="37">        <span class="n">data_fig</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subfigure</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-</span><span data-line="38">
-</span><span data-line="39">        <span class="k">return</span> <span class="n">img_fig</span><span class="p">,</span> <span class="n">data_fig</span><span class="p">,</span> <span class="n">fig</span><span class="o">.</span><span class="n">canvas</span>
-</span><span data-line="40">
+</span><span data-line="7"><span class="k">class</span><span class="w"> </span><span class="nc">Display</span><span class="p">():</span>
+</span><span data-line="8"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="9"><span class="sd">    Display to visualize data received from the thermal camera</span>
+</span><span data-line="10">
+</span><span data-line="11"><span class="sd">    On the left, it displays the received thermal image and buttons to take </span>
+</span><span data-line="12"><span class="sd">    video and select regions of interest.</span>
+</span><span data-line="13"><span class="sd">    On the right, it plots the received pixel(s) and area temperatures.</span>
+</span><span data-line="14"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="15">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">)):</span>
+</span><span data-line="16">        <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
+</span><span data-line="17">        <span class="bp">self</span><span class="o">.</span><span class="n">img_fig</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_fig</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">canvas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_setup_fig</span><span class="p">()</span>
+</span><span data-line="18">        <span class="bp">self</span><span class="o">.</span><span class="n">_create_axes</span><span class="p">()</span>
+</span><span data-line="19">        <span class="bp">self</span><span class="o">.</span><span class="n">_init_image</span><span class="p">()</span>
+</span><span data-line="20">        <span class="bp">self</span><span class="o">.</span><span class="n">_init_plots</span><span class="p">()</span>
+</span><span data-line="21">        <span class="bp">self</span><span class="o">.</span><span class="n">_add_buttons</span><span class="p">()</span>
+</span><span data-line="22">        <span class="bp">self</span><span class="o">.</span><span class="n">_add_text</span><span class="p">()</span>
+</span><span data-line="23">        <span class="bp">self</span><span class="o">.</span><span class="n">_cbar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_colorbar</span><span class="p">()</span>
+</span><span data-line="24">
+</span><span data-line="25">    <span class="k">def</span><span class="w"> </span><span class="nf">_setup_fig</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="26"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Create subfigures in the main figure</span>
+</span><span data-line="27">
+</span><span data-line="28"><span class="sd">        Returns</span>
+</span><span data-line="29"><span class="sd">        -------</span>
+</span><span data-line="30"><span class="sd">        img_fig</span>
+</span><span data-line="31"><span class="sd">            subfigure for thermal image</span>
+</span><span data-line="32"><span class="sd">        data_fig</span>
+</span><span data-line="33"><span class="sd">            subfigure for plots of live data</span>
+</span><span data-line="34"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="35">        <span class="n">fig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span>
+</span><span data-line="36">        <span class="n">gs</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_gridspec</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">width_ratios</span><span class="o">=</span><span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">],</span> <span class="n">wspace</span><span class="o">=</span><span class="mf">0.15</span><span class="p">)</span>
+</span><span data-line="37">        <span class="n">img_fig</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subfigure</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</span><span data-line="38">        <span class="n">data_fig</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subfigure</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</span><span data-line="39">
+</span><span data-line="40">        <span class="k">return</span> <span class="n">img_fig</span><span class="p">,</span> <span class="n">data_fig</span><span class="p">,</span> <span class="n">fig</span><span class="o">.</span><span class="n">canvas</span>
 </span><span data-line="41">
-</span><span data-line="42">    <span class="k">def</span><span class="w"> </span><span class="nf">_create_axes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="43"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="44"><span class="sd">        Create axes for thermal image, pixels data and area data</span>
-</span><span data-line="45"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="46">        <span class="n">gs_img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_fig</span><span class="o">.</span><span class="n">add_gridspec</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span><span class="n">left</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mf">0.90</span><span class="p">,</span><span class="n">top</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=</span><span class="mf">0.10</span><span class="p">)</span>
-</span><span data-line="47">        <span class="bp">self</span><span class="o">.</span><span class="n">ax_img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">gs_img</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-</span><span data-line="48">
-</span><span data-line="49">        <span class="n">gs_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_fig</span><span class="o">.</span><span class="n">add_gridspec</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span><span class="n">top</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=</span><span class="mf">0.10</span><span class="p">,</span><span class="n">right</span><span class="o">=</span><span class="mf">0.77</span><span class="p">,</span> <span class="n">hspace</span><span class="o">=</span><span class="mf">0.5</span>
-</span><span data-line="50">                                             <span class="p">)</span>
-</span><span data-line="51">        <span class="bp">self</span><span class="o">.</span><span class="n">ax_pixels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">gs_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-</span><span data-line="52">        <span class="bp">self</span><span class="o">.</span><span class="n">ax_area</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">gs_data</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-</span><span data-line="53">
-</span><span data-line="54">    <span class="k">def</span><span class="w"> </span><span class="nf">_init_image</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="55"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="56"><span class="sd">        Initialize image visualization</span>
-</span><span data-line="57"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="58">
-</span><span data-line="59">        <span class="c1"># Initialize a list of float as per the image data</span>
-</span><span data-line="60">        <span class="bp">self</span><span class="o">.</span><span class="n">image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax_img</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span><span class="mi">24</span><span class="p">)</span><span class="o">*</span><span class="mi">30</span><span class="o">+</span><span class="mi">10</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;inferno&#39;</span><span class="p">)</span>
-</span><span data-line="61">        <span class="bp">self</span><span class="o">.</span><span class="n">draw_pixel</span><span class="p">,</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax_img</span><span class="o">.</span><span class="n">plot</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;lime&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
-</span><span data-line="62">                                            <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;None&#39;</span><span class="p">)</span>
-</span><span data-line="63">        <span class="c1"># TODO: it would probably make more sense to add methods to this class to update</span>
-</span><span data-line="64">        <span class="c1">#       drawing of pixels and area (currently thst&#39;s done by the module roi)</span>
-</span><span data-line="65">        <span class="bp">self</span><span class="o">.</span><span class="n">draw_clicks</span><span class="p">,</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax_img</span><span class="o">.</span><span class="n">plot</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span>
-</span><span data-line="66">                                             <span class="n">markersize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;None&#39;</span><span class="p">)</span>
-</span><span data-line="67">
-</span><span data-line="68">    <span class="k">def</span><span class="w"> </span><span class="nf">_add_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="69"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="70"><span class="sd">        Add text labels to image</span>
-</span><span data-line="71"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="72">
-</span><span data-line="73">        <span class="bp">self</span><span class="o">.</span><span class="n">time_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_fig</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.4</span><span class="o">*</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="s2">&quot;Waiting for data...&quot;</span><span class="p">)</span>
-</span><span data-line="74">        <span class="bp">self</span><span class="o">.</span><span class="n">pix_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_fig</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.45</span><span class="p">,</span> <span class="mf">0.97</span><span class="p">,</span> <span class="s2">&quot;Waiting for data...&quot;</span><span class="p">)</span>
-</span><span data-line="75">        <span class="bp">self</span><span class="o">.</span><span class="n">area_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_fig</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.45</span><span class="p">,</span> <span class="mf">0.48</span><span class="p">,</span> <span class="s2">&quot;Waiting for data...&quot;</span><span class="p">)</span>
-</span><span data-line="76">
-</span><span data-line="77">    <span class="k">def</span><span class="w"> </span><span class="nf">_add_colorbar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="78"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="79"><span class="sd">        Add colorbar to thermal image</span>
-</span><span data-line="80">
-</span><span data-line="81"><span class="sd">        Returns</span>
-</span><span data-line="82"><span class="sd">        -------</span>
-</span><span data-line="83"><span class="sd">        cbar</span>
-</span><span data-line="84"><span class="sd">            colorbar</span>
-</span><span data-line="85"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="86">
-</span><span data-line="87">        <span class="n">cbar</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="n">shrink</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
-</span><span data-line="88">        <span class="n">cbar_ticks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">10.</span><span class="p">,</span> <span class="mf">40.</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span data-line="89">        <span class="n">cbar</span><span class="o">.</span><span class="n">set_ticks</span><span class="p">(</span><span class="n">cbar_ticks</span><span class="p">)</span>
-</span><span data-line="90">        <span class="n">cbar</span><span class="o">.</span><span class="n">minorticks_on</span><span class="p">()</span>
-</span><span data-line="91">
-</span><span data-line="92">        <span class="k">return</span> <span class="n">cbar</span>
-</span><span data-line="93">
-</span><span data-line="94">    <span class="k">def</span><span class="w"> </span><span class="nf">_init_plots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="95"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="96"><span class="sd">        Initialize pixel and area data visualization</span>
-</span><span data-line="97"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="98">        <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ax_pixels</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax_area</span><span class="p">]:</span>
-</span><span data-line="99">            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time from start [s]&quot;</span><span class="p">)</span>
-</span><span data-line="100">            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;T [°C]&quot;</span><span class="p">)</span>
-</span><span data-line="101">            <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
-</span><span data-line="102">            <span class="n">ax</span><span class="o">.</span><span class="n">margins</span><span class="p">(</span><span class="mf">0.15</span><span class="p">)</span>
-</span><span data-line="103">
-</span><span data-line="104">    <span class="k">def</span><span class="w"> </span><span class="nf">_add_buttons</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="105"><span class="w">        </span><span class="sd">&quot;&quot;&quot; </span>
-</span><span data-line="106"><span class="sd">        Create buttons to select area and to film video</span>
-</span><span data-line="107"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="108">        <span class="bp">self</span><span class="o">.</span><span class="n">area_button</span> <span class="o">=</span> <span class="n">CheckButtons</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">axes</span><span class="p">([</span><span class="mf">0.4</span><span class="o">*</span><span class="mf">0.45</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.4</span><span class="o">*</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.075</span><span class="p">]),</span> 
-</span><span data-line="109">                <span class="p">[</span><span class="s1">&#39;Select area&#39;</span><span class="p">,],[</span><span class="kc">False</span><span class="p">,],</span> <span class="n">check_props</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="s1">&#39;linewidth&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">})</span>
-</span><span data-line="110">        <span class="bp">self</span><span class="o">.</span><span class="n">video_button</span> <span class="o">=</span> <span class="n">CheckButtons</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">axes</span><span class="p">([</span><span class="mf">0.4</span><span class="o">*</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.4</span><span class="o">*</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.075</span><span class="p">]),</span>
-</span><span data-line="111">                <span class="p">[</span><span class="s1">&#39;Video&#39;</span><span class="p">,],</span> <span class="p">[</span><span class="kc">False</span><span class="p">,],</span><span class="n">check_props</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span><span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="s1">&#39;linewidth&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">})</span>
-</span><span data-line="112">
+</span><span data-line="42">
+</span><span data-line="43">    <span class="k">def</span><span class="w"> </span><span class="nf">_create_axes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="44"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="45"><span class="sd">        Create axes for thermal image, pixels data and area data</span>
+</span><span data-line="46"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="47">        <span class="n">gs_img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_fig</span><span class="o">.</span><span class="n">add_gridspec</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span><span class="n">left</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mf">0.90</span><span class="p">,</span><span class="n">top</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=</span><span class="mf">0.10</span><span class="p">)</span>
+</span><span data-line="48">        <span class="bp">self</span><span class="o">.</span><span class="n">ax_img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">gs_img</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</span><span data-line="49">
+</span><span data-line="50">        <span class="n">gs_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_fig</span><span class="o">.</span><span class="n">add_gridspec</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span><span class="n">top</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=</span><span class="mf">0.10</span><span class="p">,</span><span class="n">right</span><span class="o">=</span><span class="mf">0.77</span><span class="p">,</span> <span class="n">hspace</span><span class="o">=</span><span class="mf">0.5</span>
+</span><span data-line="51">                                             <span class="p">)</span>
+</span><span data-line="52">        <span class="bp">self</span><span class="o">.</span><span class="n">ax_pixels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">gs_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</span><span data-line="53">        <span class="bp">self</span><span class="o">.</span><span class="n">ax_area</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">gs_data</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</span><span data-line="54">
+</span><span data-line="55">    <span class="k">def</span><span class="w"> </span><span class="nf">_init_image</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="56"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="57"><span class="sd">        Initialize image visualization</span>
+</span><span data-line="58"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="59">
+</span><span data-line="60">        <span class="c1"># Initialize a list of float as per the image data</span>
+</span><span data-line="61">        <span class="bp">self</span><span class="o">.</span><span class="n">image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax_img</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span><span class="mi">24</span><span class="p">)</span><span class="o">*</span><span class="mi">30</span><span class="o">+</span><span class="mi">10</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;inferno&#39;</span><span class="p">)</span>
+</span><span data-line="62">        <span class="bp">self</span><span class="o">.</span><span class="n">draw_pixel</span><span class="p">,</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax_img</span><span class="o">.</span><span class="n">plot</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;lime&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
+</span><span data-line="63">                                            <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;None&#39;</span><span class="p">)</span>
+</span><span data-line="64">        <span class="bp">self</span><span class="o">.</span><span class="n">draw_clicks</span><span class="p">,</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax_img</span><span class="o">.</span><span class="n">plot</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span>
+</span><span data-line="65">                                             <span class="n">markersize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;None&#39;</span><span class="p">)</span>
+</span><span data-line="66">
+</span><span data-line="67">    <span class="k">def</span><span class="w"> </span><span class="nf">_add_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="68"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="69"><span class="sd">        Add text labels to image</span>
+</span><span data-line="70"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="71">
+</span><span data-line="72">        <span class="bp">self</span><span class="o">.</span><span class="n">time_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_fig</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.4</span><span class="o">*</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="s2">&quot;Waiting for data...&quot;</span><span class="p">)</span>
+</span><span data-line="73">        <span class="bp">self</span><span class="o">.</span><span class="n">pix_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_fig</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.45</span><span class="p">,</span> <span class="mf">0.97</span><span class="p">,</span> <span class="s2">&quot;Waiting for data...&quot;</span><span class="p">)</span>
+</span><span data-line="74">        <span class="bp">self</span><span class="o">.</span><span class="n">area_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_fig</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.45</span><span class="p">,</span> <span class="mf">0.48</span><span class="p">,</span> <span class="s2">&quot;Waiting for data...&quot;</span><span class="p">)</span>
+</span><span data-line="75">
+</span><span data-line="76">    <span class="k">def</span><span class="w"> </span><span class="nf">_add_colorbar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="77"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="78"><span class="sd">        Add colorbar to thermal image</span>
+</span><span data-line="79">
+</span><span data-line="80"><span class="sd">        Returns</span>
+</span><span data-line="81"><span class="sd">        -------</span>
+</span><span data-line="82"><span class="sd">        cbar</span>
+</span><span data-line="83"><span class="sd">            colorbar</span>
+</span><span data-line="84"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="85">
+</span><span data-line="86">        <span class="n">cbar</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="n">shrink</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+</span><span data-line="87">        <span class="n">cbar_ticks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">10.</span><span class="p">,</span> <span class="mf">40.</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="88">        <span class="n">cbar</span><span class="o">.</span><span class="n">set_ticks</span><span class="p">(</span><span class="n">cbar_ticks</span><span class="p">)</span>
+</span><span data-line="89">        <span class="n">cbar</span><span class="o">.</span><span class="n">minorticks_on</span><span class="p">()</span>
+</span><span data-line="90">
+</span><span data-line="91">        <span class="k">return</span> <span class="n">cbar</span>
+</span><span data-line="92">
+</span><span data-line="93">    <span class="k">def</span><span class="w"> </span><span class="nf">_init_plots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="94"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="95"><span class="sd">        Initialize pixel and area data visualization</span>
+</span><span data-line="96"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="97">        <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ax_pixels</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax_area</span><span class="p">]:</span>
+</span><span data-line="98">            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time from start [s]&quot;</span><span class="p">)</span>
+</span><span data-line="99">            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;T [°C]&quot;</span><span class="p">)</span>
+</span><span data-line="100">            <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="101">            <span class="n">ax</span><span class="o">.</span><span class="n">margins</span><span class="p">(</span><span class="mf">0.15</span><span class="p">)</span>
+</span><span data-line="102">
+</span><span data-line="103">    <span class="k">def</span><span class="w"> </span><span class="nf">_add_buttons</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="104"><span class="w">        </span><span class="sd">&quot;&quot;&quot; </span>
+</span><span data-line="105"><span class="sd">        Create buttons to select area and to film video</span>
+</span><span data-line="106"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="107">        <span class="bp">self</span><span class="o">.</span><span class="n">area_button</span> <span class="o">=</span> <span class="n">CheckButtons</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">axes</span><span class="p">([</span><span class="mf">0.4</span><span class="o">*</span><span class="mf">0.45</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.4</span><span class="o">*</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.075</span><span class="p">]),</span>
+</span><span data-line="108">                <span class="p">[</span><span class="s1">&#39;Select area&#39;</span><span class="p">,],[</span><span class="kc">False</span><span class="p">,],</span> <span class="n">check_props</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="s1">&#39;linewidth&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">})</span>
+</span><span data-line="109">        <span class="bp">self</span><span class="o">.</span><span class="n">video_button</span> <span class="o">=</span> <span class="n">CheckButtons</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">axes</span><span class="p">([</span><span class="mf">0.4</span><span class="o">*</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.4</span><span class="o">*</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.075</span><span class="p">]),</span>
+</span><span data-line="110">                <span class="p">[</span><span class="s1">&#39;Video&#39;</span><span class="p">,],</span> <span class="p">[</span><span class="kc">False</span><span class="p">,],</span><span class="n">check_props</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span><span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="s1">&#39;linewidth&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">})</span>
+</span><span data-line="111">
 <div class="viewcode-block" id="Display.update_cbar">
 <a class="viewcode-back" href="../../thermocam.html#thermocam.visualization.Display.update_cbar">[docs]</a>
-</span><span data-line="113">    <span class="k">def</span><span class="w"> </span><span class="nf">update_cbar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">min_temp</span><span class="p">,</span> <span class="n">max_temp</span><span class="p">):</span>
-</span><span data-line="114"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="115"><span class="sd">        Update limits of the plotted colorbar</span>
-</span><span data-line="116">
-</span><span data-line="117"><span class="sd">        Sets limits of the colorbar according to data max and min,</span>
-</span><span data-line="118"><span class="sd">        with some padding, also updates ticks on the colorbar.</span>
-</span><span data-line="119">
-</span><span data-line="120"><span class="sd">        Parameters</span>
-</span><span data-line="121"><span class="sd">        ----------</span>
-</span><span data-line="122"><span class="sd">        min_temp : float</span>
-</span><span data-line="123"><span class="sd">                  minumum measured temperature</span>
-</span><span data-line="124"><span class="sd">        max_temp : float</span>
-</span><span data-line="125"><span class="sd">                  maximum measured temperature</span>
-</span><span data-line="126"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="127">
-</span><span data-line="128">        <span class="n">upper</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">max_temp</span> <span class="o">+</span> <span class="p">(</span><span class="n">max_temp</span> <span class="o">-</span> <span class="n">min_temp</span><span class="p">)</span><span class="o">*</span><span class="mf">0.1</span><span class="p">)</span>
-</span><span data-line="129">        <span class="n">lower</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">min_temp</span> <span class="o">-</span> <span class="p">(</span><span class="n">max_temp</span> <span class="o">-</span> <span class="n">min_temp</span><span class="p">)</span><span class="o">*</span><span class="mf">0.1</span><span class="p">)</span>
-</span><span data-line="130">
-</span><span data-line="131">        <span class="bp">self</span><span class="o">.</span><span class="n">_cbar</span><span class="o">.</span><span class="n">mappable</span><span class="o">.</span><span class="n">set_clim</span><span class="p">(</span><span class="n">vmin</span><span class="o">=</span><span class="n">lower</span><span class="p">,</span><span class="n">vmax</span><span class="o">=</span><span class="n">upper</span><span class="p">)</span>
-</span><span data-line="132">        <span class="n">ticks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">,)</span>
-</span><span data-line="133">        <span class="bp">self</span><span class="o">.</span><span class="n">_cbar</span><span class="o">.</span><span class="n">set_ticks</span><span class="p">(</span><span class="n">ticks</span><span class="p">)</span></div>
+</span><span data-line="112">    <span class="k">def</span><span class="w"> </span><span class="nf">update_cbar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">min_temp</span><span class="p">,</span> <span class="n">max_temp</span><span class="p">):</span>
+</span><span data-line="113"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="114"><span class="sd">        Update limits of the plotted colorbar</span>
+</span><span data-line="115">
+</span><span data-line="116"><span class="sd">        Sets limits of the colorbar according to data max and min,</span>
+</span><span data-line="117"><span class="sd">        with some padding, also updates ticks on the colorbar.</span>
+</span><span data-line="118">
+</span><span data-line="119"><span class="sd">        Parameters</span>
+</span><span data-line="120"><span class="sd">        ----------</span>
+</span><span data-line="121"><span class="sd">        min_temp : float</span>
+</span><span data-line="122"><span class="sd">                  minumum measured temperature</span>
+</span><span data-line="123"><span class="sd">        max_temp : float</span>
+</span><span data-line="124"><span class="sd">                  maximum measured temperature</span>
+</span><span data-line="125"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="126">
+</span><span data-line="127">        <span class="n">upper</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">max_temp</span> <span class="o">+</span> <span class="p">(</span><span class="n">max_temp</span> <span class="o">-</span> <span class="n">min_temp</span><span class="p">)</span><span class="o">*</span><span class="mf">0.1</span><span class="p">)</span>
+</span><span data-line="128">        <span class="n">lower</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">min_temp</span> <span class="o">-</span> <span class="p">(</span><span class="n">max_temp</span> <span class="o">-</span> <span class="n">min_temp</span><span class="p">)</span><span class="o">*</span><span class="mf">0.1</span><span class="p">)</span>
+</span><span data-line="129">
+</span><span data-line="130">        <span class="bp">self</span><span class="o">.</span><span class="n">_cbar</span><span class="o">.</span><span class="n">mappable</span><span class="o">.</span><span class="n">set_clim</span><span class="p">(</span><span class="n">vmin</span><span class="o">=</span><span class="n">lower</span><span class="p">,</span><span class="n">vmax</span><span class="o">=</span><span class="n">upper</span><span class="p">)</span>
+</span><span data-line="131">        <span class="n">ticks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">,)</span>
+</span><span data-line="132">        <span class="bp">self</span><span class="o">.</span><span class="n">_cbar</span><span class="o">.</span><span class="n">set_ticks</span><span class="p">(</span><span class="n">ticks</span><span class="p">)</span></div>
 
-</span><span data-line="134">
+</span><span data-line="133">
 <div class="viewcode-block" id="Display.img_dimensions">
 <a class="viewcode-back" href="../../thermocam.html#thermocam.visualization.Display.img_dimensions">[docs]</a>
-</span><span data-line="135">    <span class="k">def</span><span class="w"> </span><span class="nf">img_dimensions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="136"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return dimensions of fig part that contains the image (only useful part to film)</span>
-</span><span data-line="137">
-</span><span data-line="138"><span class="sd">        Returns</span>
-</span><span data-line="139"><span class="sd">        -------</span>
-</span><span data-line="140"><span class="sd">        img_dim : tuple</span>
-</span><span data-line="141"><span class="sd">            dimensions of thermal image part of the figure</span>
-</span><span data-line="142"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="143">
-</span><span data-line="144">        <span class="n">box</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_fig</span><span class="o">.</span><span class="n">bbox</span>
-</span><span data-line="145">        <span class="n">img_dim</span> <span class="o">=</span> <span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">x0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span><span class="o">.</span><span class="n">bbox</span><span class="o">.</span><span class="n">height</span> <span class="o">-</span> <span class="n">box</span><span class="o">.</span><span class="n">y1</span><span class="p">,</span> <span class="n">box</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">box</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
-</span><span data-line="146">        <span class="k">return</span> <span class="n">img_dim</span></div>
+</span><span data-line="134">    <span class="k">def</span><span class="w"> </span><span class="nf">img_dimensions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="135"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return dimensions of fig part that contains the image (only useful part to film)</span>
+</span><span data-line="136">
+</span><span data-line="137"><span class="sd">        Returns</span>
+</span><span data-line="138"><span class="sd">        -------</span>
+</span><span data-line="139"><span class="sd">        img_dim : tuple</span>
+</span><span data-line="140"><span class="sd">            dimensions of thermal image part of the figure</span>
+</span><span data-line="141"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="142">
+</span><span data-line="143">        <span class="n">box</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_fig</span><span class="o">.</span><span class="n">bbox</span>
+</span><span data-line="144">        <span class="n">img_dim</span> <span class="o">=</span> <span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">x0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span><span class="o">.</span><span class="n">bbox</span><span class="o">.</span><span class="n">height</span> <span class="o">-</span> <span class="n">box</span><span class="o">.</span><span class="n">y1</span><span class="p">,</span> <span class="n">box</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">box</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
+</span><span data-line="145">        <span class="k">return</span> <span class="n">img_dim</span></div>
+
+</span><span data-line="146">
+<div class="viewcode-block" id="Display.update_pixels">
+<a class="viewcode-back" href="../../thermocam.html#thermocam.visualization.Display.update_pixels">[docs]</a>
+</span><span data-line="147">    <span class="k">def</span><span class="w"> </span><span class="nf">update_pixels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pixels</span><span class="p">):</span>
+</span><span data-line="148"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Draw currently defined pixels on thermal image</span>
+</span><span data-line="149"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="150">        <span class="bp">self</span><span class="o">.</span><span class="n">draw_pixel</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">pixels</span><span class="o">.</span><span class="n">p</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span><span class="n">pixels</span><span class="o">.</span><span class="n">p</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span></div>
+
+</span><span data-line="151">
+<div class="viewcode-block" id="Display.update_area">
+<a class="viewcode-back" href="../../thermocam.html#thermocam.visualization.Display.update_area">[docs]</a>
+</span><span data-line="152">    <span class="k">def</span><span class="w"> </span><span class="nf">update_area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">area</span><span class="p">):</span>
+</span><span data-line="153"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Draw currently defined area on thermal image</span>
+</span><span data-line="154"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="155">        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ax_img</span><span class="o">.</span><span class="n">patches</span><span class="p">):</span> <span class="c1"># remove previously drawn patches</span>
+</span><span data-line="156">            <span class="n">p</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+</span><span data-line="157">        <span class="c1"># if defined, draw current one</span>
+</span><span data-line="158">        <span class="k">if</span> <span class="n">area</span><span class="o">.</span><span class="n">defined</span><span class="p">():</span>
+</span><span data-line="159">            <span class="n">x_left</span><span class="p">,</span> <span class="n">y_low</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="n">area</span><span class="o">.</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">][:]</span>
+</span><span data-line="160">            <span class="n">rect</span> <span class="o">=</span> <span class="n">patches</span><span class="o">.</span><span class="n">Rectangle</span><span class="p">((</span><span class="n">x_left</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">y_low</span><span class="o">-</span><span class="mf">0.5</span><span class="p">),</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span>
+</span><span data-line="161">                                     <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">)</span>
+</span><span data-line="162">            <span class="bp">self</span><span class="o">.</span><span class="n">ax_img</span><span class="o">.</span><span class="n">add_patch</span><span class="p">(</span><span class="n">rect</span><span class="p">)</span></div>
 </div>
 
 </span></pre></div>

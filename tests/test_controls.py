@@ -14,11 +14,12 @@ def test_panel():
 
     panel = ControlPanel()
     
-    panel.rate.set_text("is")
-    panel.shift.set_text("it")
-    panel.emissivity.set_text("working?")
+    panel.rate.set_text("1")
+    panel.shift.set_text("9")
+    panel.emissivity.set_text("0.95")
+    panel.mode.set_text("TV")
 
-    panel.state.set_text("HELLOO :)")
+    panel.online()
     panel.fig.canvas.draw()
     plt.show()
 
@@ -31,23 +32,25 @@ def test_camerasettings():
     s = CameraSettings()
 
     # the following should give no issues
-    s.set_rate(8)
-    s.set_em(0.6)
-    s.set_shift(10)
-    s.set_readout(1)
+    s.rate = 8
+    s.emissivity = 0.6
+    s.shift = 10
+    s.mode = 1
 
-    assert s.settings["rate"]== 8, "This shouldn't give errors"
-    assert s.settings["emissivity"]== 0.6, "This shouldn't give errors"
-    assert s.settings["shift"]== 10, "This shouldn't give errors"
-    assert s.settings["mode"]== 1, "This shouldn't give errors"
-    
+    assert s.rate== 8, "This shouldn't give errors"
+    assert s.emissivity== 0.6, "This shouldn't give errors"
+    assert s.shift== 10, "This shouldn't give errors"
+    assert s.mode== 1, "This shouldn't give errors"
+    s.publish_form()
 
     s.default()
-    assert s.settings["rate"]== 2, "This shouldn't give errors"
-    assert s.settings["emissivity"]== 0.95, "This shouldn't give errors"
-    assert s.settings["shift"]== 8, "This shouldn't give errors"
-    assert s.settings["mode"]== 0, "This shouldn't give errors"
+    assert s.rate== 2, "This shouldn't give errors"
+    assert s.emissivity== 0.95, "This shouldn't give errors"
+    assert s.shift== 8, "This shouldn't give errors"
+    assert s.mode== 0, "This shouldn't give errors"
+
+    s.publish_form()
 
 if __name__ == "__main__":
-    test_panel()
     test_camerasettings()
+    test_panel()

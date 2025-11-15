@@ -19,7 +19,8 @@ from thermocam.controls import ControlPanel, CameraSettings
 from thermocam.visualization import Display
 
 
-MQTT_SERVER = "test.mosquitto.org"
+# MQTT_SERVER = "test.mosquitto.org"
+MQTT_SERVER = "broker.emqx.io"
 MQTT_PATH = "/singlecameras/camera1/#"
 
 def level_filter(levels):
@@ -92,7 +93,7 @@ def on_message(client, userdata, msg):
 
     if msg.topic == "/singlecameras/camera1/settings/current":
         logger.info("Received camera settings")
-        # get the current camera settings
+        # get the current camera settings and display them on contol panel
         # they are received as rate: 8.00 shift: 8.00 emissivity: 0.95 mode: 1
         logger.debug(msg.payload)
         try:
@@ -106,6 +107,10 @@ def on_message(client, userdata, msg):
             panel.rate.set_text(current_set["rate"])
             panel.shift.set_text(current_set["shift"])
             panel.emissivity.set_text(current_set["emissivity"])
+            if current_set["mode"] == 0:
+                panel.mode.set_text("Chess")
+            else:
+                panel.mode.set_text("  TV")
             panel.fig.canvas.draw()
 
         except (ValueError, KeyError):
@@ -278,7 +283,7 @@ def set_shift(expression):
     """
     # TODO: I have no idea of the allowed range for this parameter
     try:
-        settings.set_shift(expression)
+        settings.shift = float(expression)
     except ValueError:
         logger.warning("Invalid input for shift: it must be a number.")
 
@@ -289,12 +294,12 @@ def set_em(expression):
         em = float(expression)
         if 0. < em <= 1.:
             panel.emissivity_box.text_disp.set_color('black')
-            settings.set_em(em)
+            settings.emissivity = em
         else:
             panel.emissivity_box.text_disp.set_color('red') # TODO: broken (or maybe not)
             logger.warning("Invalid emissivity: it must be between 0 and 1.")
     except ValueError:
-        logger.warning("Invalid input for emissivity: it must be a number between 0 and 1.")
+        logger.warning("Invalid input for emissivity: it must be a number.")
 
 panel.shift_box.on_submit(set_shift)
 panel.emissivity_box.on_submit(set_em)
@@ -303,12 +308,13 @@ panel.emissivity_box.on_submit(set_em)
 def mode_changed(label):
     """Set readout mode
     """
-    settings.set_readout(label)
+    settings.mode = label
+
 
 def set_rate(label):
     """Set rate value
     """
-    settings.set_rate(float(label))
+    settings.rate = float(label)
 
 panel.mode_selector.on_clicked(mode_changed)
 panel.rate_selector.on_clicked(set_rate)
@@ -319,19 +325,9 @@ def update_status():
     display status as online, else as offline
     """
     if datetime.now()-last_received<max_dead_time:
-        panel.state.set_text("ONLINE")
-        panel.state.set_color("green")
-        bbox = panel.state.get_bbox_patch()
-        bbox.set_facecolor((0.8, 1.0, 0.8))  # light green
-        bbox.set_edgecolor((0.5, 1.0, 0.5))  # green border
+        panel.online()
     else:
-        panel.state.set_text("OFFLINE")
-        panel.state.set_color("red")
-        bbox = panel.state.get_bbox_patch()
-        bbox.set_facecolor((1.0, 0.8, 0.8))  # light red
-        bbox.set_edgecolor((1.0, 0.5, 0.5))  # red border
-
-    panel.fig.canvas.draw()
+        panel.offline()
 
 timer = panel.fig.canvas.new_timer(interval=500)
 timer.add_callback(update_status)
@@ -357,8 +353,8 @@ if __name__ == "__main__":
         plt.close("all")
         logger.info("Shutting down...")
     finally:
-        if SAVE_FILE:
-            f_pix.close()
-            f_area.close()
         client.loop_stop()
         client.disconnect()
+        if SAVE_FILE:
+            f_pix.close()
+            f_area.close()        

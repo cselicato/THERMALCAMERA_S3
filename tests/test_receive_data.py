@@ -10,7 +10,8 @@ import time
 import paho.mqtt.client as mqtt
 from loguru import logger
 
-MQTT_SERVER = "test.mosquitto.org"
+# MQTT_SERVER = "test.mosquitto.org"
+MQTT_SERVER = "broker.emqx.io"
 
 class DummyCamera:
     """

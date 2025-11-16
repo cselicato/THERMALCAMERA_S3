@@ -2,8 +2,6 @@
 Test for module controls
 """
 
-import matplotlib.pyplot as plt
-
 from thermocam.controls import ControlPanel, CameraSettings
 
 

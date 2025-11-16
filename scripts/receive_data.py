@@ -2,6 +2,7 @@
 Script to receive and plot the thermocamera data sent by the AtomS3 
 """
 
+import argparse
 import sys
 import time
 from datetime import datetime, timedelta
@@ -42,12 +43,6 @@ def level_filter(levels):
 
 logger.remove(0)
 logger.add(sys.stderr, filter=level_filter(["WARNING", "ERROR", "INFO"]))
-
-SAVE_FILE = True
-if SAVE_FILE:
-    curr_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-    f_pix = open(THERMOCAM_DATA / f"pix_{curr_time}.txt",'w', encoding="utf-8")
-    f_area = open(THERMOCAM_DATA / f"area_{curr_time}.txt",'w', encoding="utf-8")
 
 start_time = datetime.now()
 max_dead_time = timedelta(seconds=4) # in seconds
@@ -131,7 +126,7 @@ def on_message(client, userdata, msg):
         single_pixels.update_data(msg.payload.decode(), figure.ax_pixels, start_time)
         figure.pix_text.set_text(f"Number of current pixels: {len(single_pixels.p)}")
 
-        if SAVE_FILE:
+        if save:
             f_pix.write(f"{datetime.now()},{single_pixels.out_data()}\n")
 
     if msg.topic == "/singlecameras/camera1/area/current":
@@ -145,7 +140,7 @@ def on_message(client, userdata, msg):
         if area.defined(): # TODO: ugly
             x, y, w, h = area.a[0][:]
             figure.area_text.set_text(f"Area: ({x},{y}), w={w}, h={h}")
-            if SAVE_FILE:
+            if save:
                 f_area.write(f"{datetime.now()}, {area.out_data()}\n")
         else:
             logger.info("No current area...")
@@ -273,7 +268,7 @@ def set_em(expression):
             panel.emissivity_box.text_disp.set_color('black')
             settings.emissivity = em
         else:
-            panel.emissivity_box.text_disp.set_color('red') # TODO: broken (or maybe not)
+            panel.emissivity_box.text_disp.set_color('red')
             logger.warning("Invalid emissivity: it must be between 0 and 1.")
     except ValueError:
         logger.warning("Invalid input for emissivity: it must be a number.")
@@ -310,6 +305,18 @@ timer = panel.fig.canvas.new_timer(interval=500)
 timer.add_callback(update_status)
 timer.start()
 
+parser = argparse.ArgumentParser(description="Receive data from thermal camera")
+
+parser.add_argument("--save", default="y",choices=["y", "n"], help="Save output txt files with"
+                    "pixels data and area data")
+
+args = parser.parse_args()
+save = True if args.save == "y" else False
+if save:
+    curr_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+    f_pix = open(THERMOCAM_DATA / f"pix_{curr_time}.txt",'w', encoding="utf-8")
+    f_area = open(THERMOCAM_DATA / f"area_{curr_time}.txt",'w', encoding="utf-8")
+
 if __name__ == "__main__":
     try:
         client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
@@ -332,6 +339,6 @@ if __name__ == "__main__":
     finally:
         client.loop_stop()
         client.disconnect()
-        if SAVE_FILE:
+        if save:
             f_pix.close()
             f_area.close()

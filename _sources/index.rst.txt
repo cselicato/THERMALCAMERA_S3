@@ -6,9 +6,11 @@
 thermocam documentation
 =======================
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
+Python package to display received data from a MLX90640 thermal camera connected to an AtomS3.
+
+It provides a matplotlib-based graphical interface to plot the received thermal image, and it
+also plots the temperature of user-defined pixels and area. It also provides a control panel
+to modify the settings of the thermal camera. 
 
 
 .. toctree::

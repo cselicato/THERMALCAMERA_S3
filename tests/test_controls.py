@@ -13,7 +13,7 @@ def test_panel():
     """
 
     panel = ControlPanel()
-    
+
     panel.rate.set_text("1")
     panel.shift.set_text("9")
     panel.emissivity.set_text("0.95")

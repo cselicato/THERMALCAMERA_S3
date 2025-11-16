@@ -46,7 +46,7 @@ class InterestingPixels:
                 coord = list(map(int, pixel.split(' ')))
                 if  not np.any(np.all(self.p == coord, axis=1)): # not already present:
                     self.p = np.append(self.p, [[coord[0], coord[1]]], axis=0)
-            logger.info(f"Current pixels: {self}")
+            logger.debug(f"Current pixels: {self.p}")
 
         except ValueError:
             logger.warning(f"Received pixels have invalid format: {msg}")

@@ -2,7 +2,6 @@
 Script to receive and plot the thermocamera data sent by the AtomS3 
 """
 
-import struct
 import sys
 import time
 from datetime import datetime, timedelta
@@ -42,7 +41,7 @@ def level_filter(levels):
     return is_level
 
 logger.remove(0)
-logger.add(sys.stderr, filter=level_filter(["WARNING", "ERROR"]))
+logger.add(sys.stderr, filter=level_filter(["WARNING", "ERROR", "INFO"]))
 
 SAVE_FILE = True
 if SAVE_FILE:

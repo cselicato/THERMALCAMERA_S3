@@ -15,7 +15,7 @@ MQTT_SERVER = "broker.emqx.io"
 
 class DummyCamera:
     """
-    Generate and publish data that mimics what the AtomS3 publishes
+    Object to generate and publish data that mimics what the AtomS3 publishes
     """
 
     def __init__(self):
@@ -30,12 +30,13 @@ class DummyCamera:
     def area_data(self):
         """ Publish area data
         """
-        self.client.publish("/singlecameras/camera1/area/data", "max: 10 min: 9 avg: 8 x: 7 y: 6 w: 5 h: 4")
+        self.client.publish("/singlecameras/camera1/area/data",
+                            "max: 10 min: 9 avg: 8 x: 7 y: 6 w: 5 h: 4")
 
     def image(self):
         """ Publish image
         """
-        with open("tests/image.txt") as file:
+        with open("tests/image.txt", encoding="utf-8") as file:
             lines = [line.rstrip() for line in file]
         img = ast.literal_eval(lines[0])
         self.client.publish("/singlecameras/camera1/image", img)
@@ -47,6 +48,11 @@ class DummyCamera:
 
 
 def manual_test_loop():
+    """Start a publishing loop
+
+    Publishes dummy data every 0.5 seconds
+    """
+
     camera = DummyCamera()
 
     logger.info("Starting dummy camera publish loop. Press CTRL+C to stop.")

@@ -3,11 +3,31 @@
 """
 
 import argparse
-import paho.mqtt.client as mqtt
-from thermocam.controls import CameraSettings
 from loguru import logger
+import paho.mqtt.client as mqtt
+
+from thermocam.controls import CameraSettings
+
 
 def valid_em(v):
+    """Validate a string input as a float between 0 and 1
+
+    Parameters
+    ----------
+    v : str
+        input string
+
+    Returns
+    -------
+    float
+        if valid, the input as a float
+
+    Raises
+    ------
+    argparse.ArgumentTypeError
+        if the value cannot be converted to float or if it is not within the range
+        0 < value <= 1.
+    """
     val = float(v)
     if not 0. < val <= 1.:
         raise argparse.ArgumentTypeError(f"{v} is an invalid value, must be between 0 and 1")
@@ -15,24 +35,35 @@ def valid_em(v):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Send thermal camera MLX90640 setting to AtomS3 from the command line")
+    """
+    Parse settings from command line and publish them to the MQTT server
+    """
 
-    parser.add_argument("--host", default="test.mosquitto.org", help="MQTT broker hostname (default: test.mosquitto.org)")
+    parser = argparse.ArgumentParser(description="Send thermal camera MLX90640 setting"
+                                        "to AtomS3 from the command line")
+
+    parser.add_argument("--host", default="test.mosquitto.org", help="MQTT broker hostname "
+                        "(default: test.mosquitto.org)")
     parser.add_argument("--port", type=int, default=1883, help="MQTT broker port (default: 1883)")
 
-    parser.add_argument("--rate", type=float,choices=[0.5, 1, 2, 4, 8], default=2., help="Thermal camera refresh rate in Hz (default is 2 Hz)")
-    parser.add_argument("--shift", type=float, default=8, help="Shift for ambient temperature (default shift for MLX90640 in open air is 8)")
-    parser.add_argument("--emissivity", type=valid_em, default=0.95, help="Emissivity of the observed object, used to correct the temperature (default is 0.95). Must be a float between 0 and 1")
-    parser.add_argument("--mode", type=float,choices=[0, 1], default=0, help="Readout mode: 0 for chess pattern (default), 1 for TV interleave")
+    parser.add_argument("--rate", type=float,choices=[0.5, 1, 2, 4, 8], default=2., help="Thermal "
+                        "camera refresh rate in Hz (default is 2 Hz)")
+    parser.add_argument("--shift", type=float, default=8, help="Shift for ambient temperature "
+                        "(default shift for MLX90640 in open air is 8)")
+    parser.add_argument("--emissivity", type=valid_em, default=0.95, help="Emissivity of the "
+                        "observed object, used to correct the temperature (default is 0.95). "
+                        "Must be a float between 0 and 1")
+    parser.add_argument("--mode", type=float,choices=[0, 1], default=0, help="Readout mode: 0 for"
+                        " chess pattern (default), 1 for TV interleave")
 
     args = parser.parse_args()
 
     settings = CameraSettings()
 
-    settings.set_rate(args.rate)
-    settings.set_shift(args.shift)
-    settings.set_em(args.emissivity)
-    settings.set_readout(args.mode)
+    settings.rate = args.rate
+    settings.shift = args.shift
+    settings.emissivity = args.emissivity
+    settings.mode = args.mode
 
     # connect to MQTT
     logger.info("Connecting to MQTT server")
@@ -41,7 +72,7 @@ def main():
         client.connect(args.host, args.port, 60)
 
         # Publish message
-        result = client.publish("/singlecameras/camera1/settings", settings.publish_form(), retain=args.retain)
+        result = client.publish("/singlecameras/camera1/settings", settings.publish_form())
         result.wait_for_publish()
 
         logger.info("Published")

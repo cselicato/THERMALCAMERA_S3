@@ -142,9 +142,21 @@ data-aria-dark="Switch to auto color mode">
 </li>
 <li><a class="reference internal" href="#module-thermocam.visualization">thermocam.visualization module</a><ul>
 <li><a class="reference internal" href="#thermocam.visualization.Display"><code class="docutils literal notranslate"><span class="pre">Display</span></code></a><ul>
+<li><a class="reference internal" href="#thermocam.visualization.Display.ax_img"><code class="docutils literal notranslate">ax_img</span></code></a></li>
+<li><a class="reference internal" href="#thermocam.visualization.Display.ax_pixels"><code class="docutils literal notranslate">ax_pixels</span></code></a></li>
+<li><a class="reference internal" href="#thermocam.visualization.Display.ax_area"><code class="docutils literal notranslate">ax_area</span></code></a></li>
+<li><a class="reference internal" href="#thermocam.visualization.Display.image"><code class="docutils literal notranslate">image</span></code></a></li>
+<li><a class="reference internal" href="#thermocam.visualization.Display.video_button"><code class="docutils literal notranslate">video_button</span></code></a></li>
+<li><a class="reference internal" href="#thermocam.visualization.Display.area_button"><code class="docutils literal notranslate">area_button</span></code></a></li>
+<li><a class="reference internal" href="#thermocam.visualization.Display.time_text"><code class="docutils literal notranslate">time_text</span></code></a></li>
+<li><a class="reference internal" href="#thermocam.visualization.Display.pix_text"><code class="docutils literal notranslate">pix_text</span></code></a></li>
+<li><a class="reference internal" href="#thermocam.visualization.Display.area_text"><code class="docutils literal notranslate">area_text</span></code></a></li>
+<li><a class="reference internal" href="#thermocam.visualization.Display._cbar"><code class="docutils literal notranslate">_cbar</span></code></a></li>
+<li><a class="reference internal" href="#thermocam.visualization.Display.draw_clicks"><code class="docutils literal notranslate">draw_clicks()</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.visualization.Display.img_dimensions"><code class="docutils literal notranslate">img_dimensions()</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.visualization.Display.update_area"><code class="docutils literal notranslate">update_area()</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.visualization.Display.update_cbar"><code class="docutils literal notranslate">update_cbar()</span></code></a></li>
+<li><a class="reference internal" href="#thermocam.visualization.Display.update_image"><code class="docutils literal notranslate">update_image()</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.visualization.Display.update_pixels"><code class="docutils literal notranslate">update_pixels()</span></code></a></li>
 </ul>
 </li>
@@ -645,20 +657,149 @@ Also makes sure they are within correct bounds</p>
 <dt class="sig sig-object py" id="thermocam.visualization.Display">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">thermocam.visualization.</span></span><span class="sig-name descname"><span class="pre">Display</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(10,</span> <span class="pre">5)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/visualization.html#Display"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.visualization.Display" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Display to visualize data received from the thermal camera</p>
-<p>On the left, it displays the received thermal image and buttons to take
-video and select regions of interest.
-On the right, it plots the received pixel(s) and area temperatures.</p>
+<p>Graphical interface for visualizing thermal camera data</p>
+<p>Matplotlib-based interface consisting of two panels: a thermal image view
+(left) and temperature plots (right). It displays in real-time the thermal
+images, the selected pixels and area.It also includes buttons for
+video recording and area selection</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>figsize</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em>) – width, height in inches of the entire figure, default is (10, 5)</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="thermocam.visualization.Display.ax_img">
+<span class="sig-name descname"><span class="pre">ax_img</span></span><a class="headerlink" href="#thermocam.visualization.Display.ax_img" title="Link to this definition">¶</a></dt>
+<dd><p>axis displaying the current thermal image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib.axes.Axes</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="thermocam.visualization.Display.ax_pixels">
+<span class="sig-name descname"><span class="pre">ax_pixels</span></span><a class="headerlink" href="#thermocam.visualization.Display.ax_pixels" title="Link to this definition">¶</a></dt>
+<dd><p>axis plotting temperatures of selected pixels</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib.axes.Axes</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="thermocam.visualization.Display.ax_area">
+<span class="sig-name descname"><span class="pre">ax_area</span></span><a class="headerlink" href="#thermocam.visualization.Display.ax_area" title="Link to this definition">¶</a></dt>
+<dd><p>axis plotting temperatures of a selected rectangular area.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib.axes.Axes</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="thermocam.visualization.Display.image">
+<span class="sig-name descname"><span class="pre">image</span></span><a class="headerlink" href="#thermocam.visualization.Display.image" title="Link to this definition">¶</a></dt>
+<dd><p>image object containing the thermal frame</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib.image.AxesImage</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="thermocam.visualization.Display.video_button">
+<span class="sig-name descname"><span class="pre">video_button</span></span><a class="headerlink" href="#thermocam.visualization.Display.video_button" title="Link to this definition">¶</a></dt>
+<dd><p>Checkbox controlling video recording</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib.widgets.CheckButtons</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="thermocam.visualization.Display.area_button">
+<span class="sig-name descname"><span class="pre">area_button</span></span><a class="headerlink" href="#thermocam.visualization.Display.area_button" title="Link to this definition">¶</a></dt>
+<dd><p>Checkbox enabling area selection mode</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib.widgets.CheckButtons</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="thermocam.visualization.Display.time_text">
+<span class="sig-name descname"><span class="pre">time_text</span></span><a class="headerlink" href="#thermocam.visualization.Display.time_text" title="Link to this definition">¶</a></dt>
+<dd><p>timestamp of the last received frame</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib.text.Text</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="thermocam.visualization.Display.pix_text">
+<span class="sig-name descname"><span class="pre">pix_text</span></span><a class="headerlink" href="#thermocam.visualization.Display.pix_text" title="Link to this definition">¶</a></dt>
+<dd><p>status text for pixel-related information</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib.text.Text</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="thermocam.visualization.Display.area_text">
+<span class="sig-name descname"><span class="pre">area_text</span></span><a class="headerlink" href="#thermocam.visualization.Display.area_text" title="Link to this definition">¶</a></dt>
+<dd><p>status text for area-related information</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib.text.Text</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="thermocam.visualization.Display._cbar">
+<span class="sig-name descname"><span class="pre">_cbar</span></span><a class="headerlink" href="#thermocam.visualization.Display._cbar" title="Link to this definition">¶</a></dt>
+<dd><p>Colorbar associated with the thermal image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib.colorbar.Colorbar</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="thermocam.visualization.Display.draw_clicks">
+<span class="sig-name descname"><span class="pre">draw_clicks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">c</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/visualization.html#Display.draw_clicks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.visualization.Display.draw_clicks" title="Link to this definition">¶</a></dt>
+<dd><p>Plot clicked points used to define interesting area on thermal image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>c</strong> (<em>array-like with shape</em><em> (</em><em>n</em><em>, </em><em>2</em><em>)</em>) – coordinates of the clicked points</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.visualization.Display.img_dimensions">
 <span class="sig-name descname"><span class="pre">img_dimensions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/visualization.html#Display.img_dimensions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.visualization.Display.img_dimensions" title="Link to this definition">¶</a></dt>
-<dd><p>Return dimensions of fig part that contains the image (only useful part to film)</p>
+<dd><p>Return the dimensions of the thermal image region of the figure</p>
+<p>This is useful for capturing the video, since this is the only useful part
+to film</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>img_dim</strong> – dimensions of thermal image part of the figure</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>tuple</p>
+<dd class="field-even"><p>tuple of float</p>
 </dd>
 </dl>
 </dd></dl>
@@ -666,7 +807,13 @@ On the right, it plots the received pixel(s) and area temperatures.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.visualization.Display.update_area">
 <span class="sig-name descname"><span class="pre">update_area</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">area</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/visualization.html#Display.update_area"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.visualization.Display.update_area" title="Link to this definition">¶</a></dt>
-<dd><p>Draw currently defined area on thermal image</p>
+<dd><p>Draw a rectangle around the currently defined area on thermal image</p>
+<p>The previous area is removed before drawing new one</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>area</strong> (<a class="reference internal" href="#thermocam.roi.InterestingArea" title="thermocam.roi.InterestingArea"><em>thermocam.roi.InterestingArea</em></a>)</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -686,9 +833,35 @@ with some padding, also updates ticks on the colorbar.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="thermocam.visualization.Display.update_image">
+<span class="sig-name descname"><span class="pre">update_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/visualization.html#Display.update_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.visualization.Display.update_image" title="Link to this definition">¶</a></dt>
+<dd><p>Update the displayed thermal image from an incoming MQTT message</p>
+<p>The message payload is expected to contain 768 float32 temperature
+values. The frame is reshaped, transposed, and then drawn.
+Every ten frames, the colorbar limits are automatically updated based
+on the current minimum and maximum temperatures (with 10% padding).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>msg</strong> (<em>received MQTT message as-is</em>)</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>struct.error</strong> – if the payload size is invalid for unpacking</p></li>
+<li><p><strong>ValueError</strong> – if the reshaped array does not match the expected format</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="thermocam.visualization.Display.update_pixels">
 <span class="sig-name descname"><span class="pre">update_pixels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pixels</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/visualization.html#Display.update_pixels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.visualization.Display.update_pixels" title="Link to this definition">¶</a></dt>
 <dd><p>Draw currently defined pixels on thermal image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>pixels</strong> (<em>thermocam.c.InterestingPixels</em>)</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

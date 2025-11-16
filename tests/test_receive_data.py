@@ -40,6 +40,11 @@ class DummyCamera:
         img = ast.literal_eval(lines[0])
         self.client.publish("/singlecameras/camera1/image", img)
 
+    def empty(self):
+        """Publish empty message
+        """
+        self.client.publish("/singlecameras/camera1/image", "")
+
 
 def manual_test_loop():
     camera = DummyCamera()

@@ -247,7 +247,7 @@ class InterestingArea:
             logger.debug(msg)
             pattern = r'(\w+):\s(-?\d+\.?\d?)'
             matches = re.findall(pattern, msg)
-            # Convert to dictionary, converting numbers to float or int automatically
+            # Convert to dictionary, converting numbers to float or int
             data = {k: float(v) if "." in v else int(v) for k, v in matches}
             # values should be appended only if they are all present
             if (data["max"] and data["min"] and data["avg"]):

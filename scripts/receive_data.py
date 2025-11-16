@@ -56,7 +56,6 @@ last_received = datetime.now()-timedelta(seconds=10)
 
 
 clicks = np.empty((0, 2), dtype=int)    # array for mouse clicks to define area
-received = 0    # counter for how many thermal images have been received
 
 figure = Display()
 panel = ControlPanel()
@@ -121,25 +120,8 @@ def on_message(client, userdata, msg):
     # button is clicked, add frame to video
     if msg.topic == "/singlecameras/camera1/image":
         last_received = datetime.now()
-        try:
-            flo_arr = [struct.unpack('f', msg.payload[i:i+4])[0]
-                       for i in range(0, len(msg.payload), 4)]
-            # data must be transposed to match what is shown on AtomS3 display
-            thermal_img = np.array(flo_arr).reshape(24,32).T
-            figure.image.set_data(thermal_img)
-
-            if received%10 == 0:
-                # update colorbar according to min and max of the measured temperatures
-                figure.update_cbar(np.min(thermal_img), np.max(thermal_img))
-
-            received += 1
-
-            figure.time_text.set_text(datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
-            figure.canvas.draw() # draw canvas
-
-            video.add_frame(figure, figure.img_dimensions())
-        except (struct.error, ValueError):
-            logger.warning("Received invalid image")
+        figure.update_image(msg)
+        video.add_frame(figure, figure.img_dimensions())
 
     if msg.topic == "/singlecameras/camera1/pixels/current":
         # get pixels the camera is already looking at
@@ -198,14 +180,13 @@ def on_click(event):
             logger.info("Click again to redefine area")
             clicks = np.empty((0, 2), dtype=int)
 
-        figure.draw_clicks.set_data(clicks[:,0],clicks[:,1])
+        figure.draw_clicks(clicks)
 
         if clicks.shape[0] == 2:
             area.get_from_click(clicks)    # get defined area
             figure.update_area(area)    #update drawn area
             # publish the selected area
             client.publish("/singlecameras/camera1/area", area.pub_area())
-            figure.draw_clicks.set_data([],[]) # remove cliks from image
 
     else:
         # if area button is not clicked get point coordinates and publish them

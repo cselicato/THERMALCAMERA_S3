@@ -2,7 +2,7 @@
 Test for module controls
 """
 
-from thermocam.controls import ControlPanel, CameraSettings
+from thermocam.settings import ControlPanel, CameraSettings
 
 
 def test_panel():

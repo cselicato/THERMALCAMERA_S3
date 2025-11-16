@@ -243,8 +243,8 @@ class Display():
 
             self._received += 1
 
-        except (struct.error, ValueError):
-            logger.warning("Received invalid image")
+        except (struct.error, ValueError) as e:
+            logger.warning(f"Received invalid image: {e}")
 
     def update_pixels(self, pixels):
         """Draw currently defined pixels on thermal image

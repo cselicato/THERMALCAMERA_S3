@@ -21,7 +21,6 @@ def test_panel():
 
     panel.online()
     panel.fig.canvas.draw()
-    plt.show()
 
 
 def test_camerasettings():
@@ -31,23 +30,22 @@ def test_camerasettings():
 
     s = CameraSettings()
 
-    # the following should give no issues
     s.rate = 8
     s.emissivity = 0.6
     s.shift = 10
     s.mode = 1
 
-    assert s.rate== 8, "This shouldn't give errors"
-    assert s.emissivity== 0.6, "This shouldn't give errors"
-    assert s.shift== 10, "This shouldn't give errors"
-    assert s.mode== 1, "This shouldn't give errors"
+    assert s.rate== 8, "Not setting rate value correctly"
+    assert s.emissivity== 0.6, "Not setting emissivity value correctly"
+    assert s.shift== 10, "Not setting shift value correctly"
+    assert s.mode== 1, "Not setting mode value correctly"
     s.publish_form()
 
     s.default()
-    assert s.rate== 2, "This shouldn't give errors"
-    assert s.emissivity== 0.95, "This shouldn't give errors"
-    assert s.shift== 8, "This shouldn't give errors"
-    assert s.mode== 0, "This shouldn't give errors"
+    assert s.rate== 2, "Not setting default rate value correctly"
+    assert s.emissivity== 0.95, "Not setting default emissivity value correctly"
+    assert s.shift== 8, "Not setting default shift value correctly"
+    assert s.mode== 0, "Not setting default mode value correctly"
 
     s.publish_form()
 

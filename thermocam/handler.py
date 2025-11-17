@@ -15,16 +15,50 @@ from thermocam.callbacks import GUICallbacks
 
 
 class ThermoHandler():
-    """Handler for GUI, MQTT callback and data
+    """Central handler for GUI elements, MQTT message processing, and output data.
 
     Connects everything together
+
+    Parameters
+    ----------
+    save : bool, optional
+        If True, pixel and area data received from the device are written to
+        timestamped text files, default is True
+    max_dead_time : timedelta, optional
+        Maximum allowed delay between frames before the device is considered
+        offline, dafault is 2 s
+
+    Attributes
+        ----------
+        client : paho.mqtt.client.Client or None
+            MQTT client instance (must be assigned externally).
+        start_time : datetime
+            Time when the handler was created, used to timestamp incoming data.
+        last_received : datetime
+            Timestamp of the last received image frame.
+        clicks : np.ndarray
+            Stores pairs of (x, y) coordinates used to define selected area.
+        figure : Display
+            GUI display and plotting manager.
+        panel : ControlPanel
+            Interactive settings panel.
+        video : VideoMaker
+            Video recording manager.
+        settings : CameraSettings
+            Stores user-selected camera configuration.
+        area : InterestingArea
+            Object for handling selected rectangular ROI.
+        single_pixels : InterestingPixels
+            Object for handling selected individual pixels.
+        f_pix, f_area : file or None
+            Output files for data, if saving is enabled.
     """
 
-    def __init__(self, save=False):
+    def __init__(self, save=False,max_dead_time = timedelta(seconds=2)):
         self.client = None
 
         self.start_time = datetime.now()
-        self.max_dead_time = timedelta(seconds=4) # in seconds
+        self.max_dead_time = max_dead_time
         self.last_received = datetime.now()-timedelta(seconds=10)
         self.clicks = np.empty((0, 2), dtype=int)    # array for mouse clicks to define area
         self.figure = Display()
@@ -45,14 +79,14 @@ class ThermoHandler():
 
         self.panel.shift_box.on_submit(cb.set_shift)
         self.panel.emissivity_box.on_submit(cb.set_em)
-    
+
         self.panel.mode_selector.on_clicked(cb.mode_changed)
         self.panel.rate_selector.on_clicked(cb.set_rate)
 
         # gets updated with new image
         self.last_received = datetime.now() - timedelta(seconds=10)
 
-        self.canvas = self.panel.fig.canvas     
+        self.canvas = self.panel.fig.canvas
         self.timer = self.figure.canvas.new_timer(interval=500)  # 500 ms
         self.timer.add_callback(self.update_status)             # callback
         self.timer.start()
@@ -66,17 +100,24 @@ class ThermoHandler():
             curr_time = datetime.now().strftime("%Y%m%d_%H%M%S")
             self.f_pix = open(THERMOCAM_DATA / f"pix_{curr_time}.txt", 'w', encoding="utf-8")
             self.f_area = open(THERMOCAM_DATA / f"area_{curr_time}.txt", 'w', encoding="utf-8")
-                
+     
 
 
     # MQTT CALLBACK
     def handle_message(self, msg):
-        """Callback for handling MQTT messages
+        """Process incoming MQTT messages from the AtomS3
+
+        According to the topic, it:
+        - displays the thermal image
+        - updates pixels and area selection by drawing the current ones
+        - updates the live plots of the pixels and area data
+        - records video (of the thermal image)
+        - displays current settings ot the thermal camera in the contol panel
 
         Parameters
         ----------
-        msg : _type_
-            _description_
+        msg : paho.mqtt.client.MQTTMessage
+            received MQTT message
         """
         # if the received message is empty, ignore it
         if not msg.payload:
@@ -121,7 +162,8 @@ class ThermoHandler():
             self.figure.update_pixels(self.single_pixels)
 
         if msg.topic == "/singlecameras/camera1/pixels/data":
-            self.single_pixels.update_data(msg.payload.decode(), self.figure.ax_pixels, self.start_time)
+            self.single_pixels.update_data(msg.payload.decode(),
+                                           self.figure.ax_pixels, self.start_time)
             self.figure.pix_text.set_text(f"Number of current pixels: {len(self.single_pixels.p)}")
 
             if self.save and self.f_pix:
@@ -145,8 +187,12 @@ class ThermoHandler():
 
     def update_status(self):
         """
-        If last image from AtomS3 has been received less than 5 s ago,
-        display status as online, else as offline
+        Update the device status on the control panel.
+
+        If last image from AtomS3 has been received within max_dead_time, it
+        display ONLINE status, otherwise as OFFLINE.
+
+        This method is meant to be periodically executed by a timer
         """
         if datetime.now()-self.last_received<self.max_dead_time:
             self.panel.online()
@@ -154,7 +200,7 @@ class ThermoHandler():
             self.panel.offline()
 
     def close_files(self):
-        """If they where opened, close output files
+        """ Close pixel and area output files if they were opened.
         """
         if self.f_pix:
             self.f_pix.close()

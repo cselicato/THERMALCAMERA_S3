@@ -14,7 +14,8 @@ from thermocam.callbacks import MQTTCallbacks
 
 
 # MQTT_SERVER = "test.mosquitto.org"
-MQTT_SERVER = "broker.emqx.io"
+MQTT_SERVER = "broker.emqx.io" # TODO: find a way to write server path in a config file
+                               # or something similar
 
 def level_filter(levels):
     """

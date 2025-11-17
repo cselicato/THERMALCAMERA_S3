@@ -27,7 +27,7 @@ class VideoMaker:
 
         now = datetime.now() # current date and time
         time = now.strftime("%Y%m%d_%H%M%S")
-        
+
         filename = THERMOCAM_VIDEO / f"{time}.mp4"
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         self.video = cv2.VideoWriter(filename, fourcc, self.fps, self.size, isColor=True)
@@ -47,19 +47,19 @@ class VideoMaker:
         """
         if not self.filming:
             return
-    
-        
+
+
         data_arr = np.asarray(fig.canvas.renderer.buffer_rgba()) # convert to RGBA array
-    
+
         if bbox_inches is not None:
             x0, y0, width, height = bbox_inches
             # Clip and convert to int
             x0, y0, width, height = map(int, [x0, y0, width, height])
             data_arr = data_arr[y0:y0+height, x0:x0+width, :]
-    
+
         data_arr = cv2.cvtColor(data_arr, cv2.COLOR_RGBA2BGR) # Convert to BGR (opencv's default)
         data_arr = cv2.resize(data_arr, self.size)
-    
+
         self.video.write(data_arr)
 
 
@@ -74,5 +74,4 @@ class VideoMaker:
 
         self.video.release()
         self.filming = False
-        logger.info(f"Stopped filming, saved output video")
-
+        logger.info("Stopped filming, saved output video")

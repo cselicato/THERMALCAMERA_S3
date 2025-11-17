@@ -1,3 +1,7 @@
+""" Define the GUI to set the thermal camera settings and send them to the device,
+    along with buttons to reset the selections of pixels and area
+"""
+
 import math
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
@@ -97,14 +101,21 @@ class ControlPanel:
         self.mode_selector = RadioButtons(radio_ax, ('Chess pattern', 'TV interleave'))#, active=0)
 
         # buttons to apply/reset settings
-        self.apply_settings = Button(plt.axes([0.03+0.085, 0.07, 0.14, 0.075]),"APPLY",color="#2589da65")
+        self.apply_settings = Button(plt.axes([0.03+0.085, 0.07, 0.14, 0.075]),
+                                     "APPLY",color="#2589da65")
         self.apply_settings.ax.patch.set_edgecolor("red")
-        self.reset_settings = Button(plt.axes([0.27+0.045, 0.07, 0.14, 0.075]), "DEFAULT",color="#2588da65")
+        self.reset_settings = Button(plt.axes([0.27+0.045, 0.07, 0.14, 0.075]),
+                                      "DEFAULT",color="#2588da65")
         # button to request current settings, pixels and area
         self.get_info = Button(plt.axes([0.66, 0.1, 0.24, 0.075]), "Request info")
 
     def _status_display(self):
-        """ Add display for current camera status (online/offline)
+        """Add display for current camera status (online/offline)
+
+        Returns
+        -------
+        state : Text
+            text that displays current AtomS3 status (initialized as OFFLINE)
         """
         fig = self.fig
         state = fig.text(0.72, 0.335, "OFFLINE",fontsize=13,color="red",
@@ -115,7 +126,8 @@ class ControlPanel:
         return state
 
     def _cosmetic_work(self):
-        """Draw boxes to make it look nicer
+        """Draw boxes to make the control panel look nicer and visually
+        distinguish the different functionalities
         """
         ax_bg = self.fig.add_axes([0, 0, 1, 1], zorder=-10)
         ax_bg.axis("off")
@@ -149,6 +161,8 @@ class ControlPanel:
         ax_bg.add_patch(box_4)
 
     def online(self):
+        """Set the AtomS3 status as online on the panel
+        """
         self._state.set_text("ONLINE")
         self._state.set_color("green")
         bbox = self._state.get_bbox_patch()
@@ -157,6 +171,8 @@ class ControlPanel:
         self.fig.canvas.draw()
 
     def offline(self):
+        """Set the AtomS3 status as offline on the panel
+        """
         self._state.set_text("OFFLINE")
         self._state.set_color("red")
         bbox = self._state.get_bbox_patch()

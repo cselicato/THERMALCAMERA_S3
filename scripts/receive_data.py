@@ -2,25 +2,20 @@
 Script to receive and plot the thermocamera data sent by the AtomS3 
 """
 
+import argparse
 import sys
 import time
-from datetime import datetime, timedelta
-import re
-import numpy as np
 import matplotlib.pyplot as plt
 import paho.mqtt.client as mqtt
 from loguru import logger
 
-from thermocam import THERMOCAM_DATA
-from thermocam.videomaker import VideoMaker
-from thermocam.roi import InterestingArea, InterestingPixels
-from thermocam.controls import ControlPanel, CameraSettings
-from thermocam.visualization import Display
+from thermocam.handler import ThermoHandler
+from thermocam.callbacks import MQTTCallbacks
 
 
 # MQTT_SERVER = "test.mosquitto.org"
-MQTT_SERVER = "broker.emqx.io"
-MQTT_PATH = "/singlecameras/camera1/#"
+MQTT_SERVER = "broker.emqx.io" # TODO: find a way to write server path in a config file
+                               # or something similar
 
 def level_filter(levels):
     """
@@ -40,287 +35,34 @@ def level_filter(levels):
         return record["level"].name in levels
     return is_level
 
-logger.remove(0)
-logger.add(sys.stderr, filter=level_filter(["WARNING", "ERROR", "INFO"]))
 
-SAVE_FILE = True
-if SAVE_FILE:
-    curr_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-    f_pix = open(THERMOCAM_DATA / f"pix_{curr_time}.txt",'w', encoding="utf-8")
-    f_area = open(THERMOCAM_DATA / f"area_{curr_time}.txt",'w', encoding="utf-8")
+def main():
+    logger.remove(0)
+    logger.add(sys.stderr, filter=level_filter(["WARNING", "ERROR", "INFO"]))
 
-start_time = datetime.now()
-max_dead_time = timedelta(seconds=4) # in seconds
-last_received = datetime.now()-timedelta(seconds=10)
+    parser = argparse.ArgumentParser(description="Receive data from thermal camera")
+    parser.add_argument("--save", default="y",choices=["y", "n"], help="Save output txt files with"
+                        "pixels data and area data")
 
+    args = parser.parse_args()
+    save = True if args.save == "y" else False
 
-clicks = np.empty((0, 2), dtype=int)    # array for mouse clicks to define area
+    handler = ThermoHandler(save)
+    mqtt_cbs = MQTTCallbacks(handler)
 
-figure = Display()
-panel = ControlPanel()
-
-video = VideoMaker()
-settings = CameraSettings()
-area = InterestingArea()
-single_pixels = InterestingPixels()
-
-
-# MQTT CALLBACKS
-def on_connect(client, userdata, flags, reason_code, properties):
-    """
-    Subsciribe to desired topic(s)
-
-    Subscribing in on_connect() means that if we lose the connection and
-    reconnect then subscriptions will be renewed.
-    """
-
-    logger.info(f"Connected with result code {reason_code}")
-    client.subscribe(MQTT_PATH)
-
-# The callback for when a PUBLISH message is received from the server.
-def on_message(client, userdata, msg):
-    """
-    Define what happens when a MQTT message is received
-    """
-
-    # if the received message is empty, ignore it
-    if not msg.payload:
-        logger.warning(f"Received empty message on topic {msg.topic}")
-
-    global single_pixels, area, figure, received, last_received, panel
-
-    if msg.topic == "/singlecameras/camera1/settings/current":
-        logger.info("Received camera settings")
-        # get the current camera settings and display them on contol panel
-        # they are received as rate: 8.00 shift: 8.00 emissivity: 0.95 mode: 1
-        logger.debug(msg.payload)
-        try:
-            st_settings = msg.payload.decode()
-            pattern_set = r'(\w+):\s(\d+(?:\.\d+)?)'
-            matches_set = re.findall(pattern_set, st_settings)
-
-            # Convert to dictionary
-            current_set = {k: float(v) for k, v in matches_set}
-
-            panel.rate.set_text(current_set["rate"])
-            panel.shift.set_text(current_set["shift"])
-            panel.emissivity.set_text(current_set["emissivity"])
-            if current_set["mode"] == 0:
-                panel.mode.set_text("Chess")
-            else:
-                panel.mode.set_text("  TV")
-            panel.fig.canvas.draw()
-
-        except (ValueError, KeyError):
-            logger.warning(f"Received settings have invalid format: {msg.payload}")
-
-
-    # an image is recieved from the sensor: plot the image and, if video
-    # button is clicked, add frame to video
-    if msg.topic == "/singlecameras/camera1/image":
-        last_received = datetime.now()
-        figure.update_image(msg)
-        video.add_frame(figure, figure.img_dimensions())
-
-    if msg.topic == "/singlecameras/camera1/pixels/current":
-        # get pixels the camera is already looking at
-        single_pixels.handle_mqtt(msg.payload.decode())
-        figure.update_pixels(single_pixels)
-
-    if msg.topic == "/singlecameras/camera1/pixels/data":
-        single_pixels.update_data(msg.payload.decode(), figure.ax_pixels, start_time)
-        figure.pix_text.set_text(f"Number of current pixels: {len(single_pixels.p)}")
-
-        if SAVE_FILE:
-            f_pix.write(f"{datetime.now()},{single_pixels.out_data()}\n")
-
-    if msg.topic == "/singlecameras/camera1/area/current":
-        # get area the camera is already looking at
-        area.handle_mqtt(msg.payload.decode())
-        figure.update_area(area)
-
-    if msg.topic == "/singlecameras/camera1/area/data":
-        area.update_data(msg.payload.decode(), figure.ax_area, start_time)
-        # NOTE: if current area (persistent message) is not received it does not work
-        if area.defined(): # TODO: ugly
-            x, y, w, h = area.a[0][:]
-            figure.area_text.set_text(f"Area: ({x},{y}), w={w}, h={h}")
-            if SAVE_FILE:
-                f_area.write(f"{datetime.now()}, {area.out_data()}\n")
-        else:
-            logger.info("No current area...")
-
-
-
-
-# CALLBACK FOR MOUSE CLICK
-def on_click(event):
-    """
-    Defines what to do when  there is a mouse click on the figure:
-    if area button is not clicked, get point and publish it
-    if it is clicked define area (only one area at the time)
-    """
-
-    global area, clicks, single_pixels
-
-    if not event.inaxes == figure.ax_img:
-        # when the click is outside of the axes do nothing
-        return
-
-    # get coordinates of the mouse click
-    x = np.round(event.xdata).astype(int)
-    y = np.round(event.ydata).astype(int)
-
-    if figure.area_button.get_status()[0]:
-        # if area button is clicked define area (two clicks are needed)
-        clicks = np.append(clicks, [(x, y)], axis=0)
-
-        if clicks.shape[0]>2:   # reset area with more than two clicks
-            logger.info("Click again to redefine area")
-            clicks = np.empty((0, 2), dtype=int)
-
-        figure.draw_clicks(clicks)
-
-        if clicks.shape[0] == 2:
-            area.get_from_click(clicks)    # get defined area
-            figure.update_area(area)    #update drawn area
-            # publish the selected area
-            client.publish("/singlecameras/camera1/area", area.pub_area())
-
-    else:
-        # if area button is not clicked get point coordinates and publish them
-        # if coordinates are already present, it does not append nor publish them
-        if single_pixels.get_from_click(x, y):
-            # publish position of the last pixel
-            client.publish("/singlecameras/camera1/pixels/coord", single_pixels.new_pixel())
-            figure.update_pixels(single_pixels)
-# connect mouse click to callback
-cid = figure.canvas.mpl_connect('button_press_event', on_click)
-
-
-def video_button_cb(label):
-    """ Callback for video checkbox: when checked it starts the video,
-        and it stops it when i is no longer on    
-
-    Parameters
-    ----------
-        label
-    """
-    global video
-    if not video.filming:
-        # when checkbox is clicked and previously the video was not being saved,
-        # start video
-        video.start_video()
-    else:
-        # if video was being taken, stop and save the file
-        video.stop_video()
-
-figure.video_button.on_clicked(video_button_cb)
-
-# callbacks for control panel buttons
-def reset_px_cb(event):
-    """Publish pixel reset message
-    """
-    client.publish("/singlecameras/camera1/pixels/reset", "1")
-
-def reset_a_cb(event):
-    """Publish pixel reset message
-    """
-    client.publish("/singlecameras/camera1/area/reset", "1")
-
-def info_cb(event):
-    """Publish message for information request
-    """
-    client.publish("/singlecameras/camera1/info_request", "1")
-    logger.info("Sending request to AtomS3")
-
-def apply_set(event):
-    """Publish selected settings
-    """
-    logger.info("Sending new settings to AtomS3")
-    client.publish("/singlecameras/camera1/settings", settings.publish_form())
-
-def reset_set(event):
-    """Publish default settings
-    """
-    logger.info("Sending default settings to AtomS3")
-    settings.default()
-    client.publish("/singlecameras/camera1/settings", settings.publish_form())
-
-panel.reset_pixels.on_clicked(reset_px_cb)
-panel.reset_area.on_clicked(reset_a_cb)
-panel.get_info.on_clicked(info_cb)
-panel.apply_settings.on_clicked(apply_set)
-panel.reset_settings.on_clicked(reset_set)
-
-# callbacks for textboxes on control panel
-# TODO: it would be very nice if the box turned red when invalid values are inserted
-def set_shift(expression):
-    """Set shift value
-    """
-    # TODO: I have no idea of the allowed range for this parameter
-    try:
-        settings.shift = float(expression)
-    except ValueError:
-        logger.warning("Invalid input for shift: it must be a number.")
-
-def set_em(expression):
-    """Set shift value
-    """
-    try:
-        em = float(expression)
-        if 0. < em <= 1.:
-            panel.emissivity_box.text_disp.set_color('black')
-            settings.emissivity = em
-        else:
-            panel.emissivity_box.text_disp.set_color('red') # TODO: broken (or maybe not)
-            logger.warning("Invalid emissivity: it must be between 0 and 1.")
-    except ValueError:
-        logger.warning("Invalid input for emissivity: it must be a number.")
-
-panel.shift_box.on_submit(set_shift)
-panel.emissivity_box.on_submit(set_em)
-
-# callbacks for menus on control panel
-def mode_changed(label):
-    """Set readout mode
-    """
-    settings.mode = label
-
-
-def set_rate(label):
-    """Set rate value
-    """
-    settings.rate = float(label)
-
-panel.mode_selector.on_clicked(mode_changed)
-panel.rate_selector.on_clicked(set_rate)
-
-def update_status():
-    """
-    If last image from AtomS3 has been received less than 5 s ago,
-    display status as online, else as offline
-    """
-    if datetime.now()-last_received<max_dead_time:
-        panel.online()
-    else:
-        panel.offline()
-
-timer = panel.fig.canvas.new_timer(interval=500)
-timer.add_callback(update_status)
-timer.start()
-
-if __name__ == "__main__":
     try:
         client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-        client.on_connect = on_connect
-        client.on_message = on_message
+        client.on_connect = mqtt_cbs.on_connect
+        client.on_message = mqtt_cbs.on_message
         client.connect(MQTT_SERVER, 1883, 60)
+
+        handler.client = client
 
         client.publish("/singlecameras/camera1/info_request", "1")
         time.sleep(0.5)
         client.loop_start()
         plt.show()
+
     except OSError as e:
         if e.errno == 101:
             logger.error("Network is unreachable, check internet connection or try later :(")
@@ -332,6 +74,8 @@ if __name__ == "__main__":
     finally:
         client.loop_stop()
         client.disconnect()
-        if SAVE_FILE:
-            f_pix.close()
-            f_area.close()
+        handler.close_files()
+
+
+if __name__ == "__main__":
+    main()

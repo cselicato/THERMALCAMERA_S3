@@ -6,7 +6,7 @@ import argparse
 from loguru import logger
 import paho.mqtt.client as mqtt
 
-from thermocam.controls import CameraSettings
+from thermocam.settings import CameraSettings
 
 
 def valid_em(v):

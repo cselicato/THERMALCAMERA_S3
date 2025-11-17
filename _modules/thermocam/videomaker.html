@@ -138,7 +138,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="27">
 </span><span data-line="28">        <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="c1"># current date and time</span>
 </span><span data-line="29">        <span class="n">time</span> <span class="o">=</span> <span class="n">now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">_%H%M%S&quot;</span><span class="p">)</span>
-</span><span data-line="30">        
+</span><span data-line="30">
 </span><span data-line="31">        <span class="n">filename</span> <span class="o">=</span> <span class="n">THERMOCAM_VIDEO</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">time</span><span class="si">}</span><span class="s2">.mp4&quot;</span>
 </span><span data-line="32">        <span class="n">fourcc</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">VideoWriter_fourcc</span><span class="p">(</span><span class="o">*</span><span class="s1">&#39;mp4v&#39;</span><span class="p">)</span>
 </span><span data-line="33">        <span class="bp">self</span><span class="o">.</span><span class="n">video</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">VideoWriter</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">fourcc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">isColor</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -161,19 +161,19 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="47"><span class="sd">        &quot;&quot;&quot;</span>
 </span><span data-line="48">        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">filming</span><span class="p">:</span>
 </span><span data-line="49">            <span class="k">return</span>
-</span><span data-line="50">    
-</span><span data-line="51">        
+</span><span data-line="50">
+</span><span data-line="51">
 </span><span data-line="52">        <span class="n">data_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">buffer_rgba</span><span class="p">())</span> <span class="c1"># convert to RGBA array</span>
-</span><span data-line="53">    
+</span><span data-line="53">
 </span><span data-line="54">        <span class="k">if</span> <span class="n">bbox_inches</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
 </span><span data-line="55">            <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="n">bbox_inches</span>
 </span><span data-line="56">            <span class="c1"># Clip and convert to int</span>
 </span><span data-line="57">            <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="p">[</span><span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">])</span>
 </span><span data-line="58">            <span class="n">data_arr</span> <span class="o">=</span> <span class="n">data_arr</span><span class="p">[</span><span class="n">y0</span><span class="p">:</span><span class="n">y0</span><span class="o">+</span><span class="n">height</span><span class="p">,</span> <span class="n">x0</span><span class="p">:</span><span class="n">x0</span><span class="o">+</span><span class="n">width</span><span class="p">,</span> <span class="p">:]</span>
-</span><span data-line="59">    
+</span><span data-line="59">
 </span><span data-line="60">        <span class="n">data_arr</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">data_arr</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_RGBA2BGR</span><span class="p">)</span> <span class="c1"># Convert to BGR (opencv&#39;s default)</span>
 </span><span data-line="61">        <span class="n">data_arr</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">data_arr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
-</span><span data-line="62">    
+</span><span data-line="62">
 </span><span data-line="63">        <span class="bp">self</span><span class="o">.</span><span class="n">video</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data_arr</span><span class="p">)</span></div>
 
 </span><span data-line="64">
@@ -191,10 +191,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="74">
 </span><span data-line="75">        <span class="bp">self</span><span class="o">.</span><span class="n">video</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
 </span><span data-line="76">        <span class="bp">self</span><span class="o">.</span><span class="n">filming</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span data-line="77">        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stopped filming, saved output video&quot;</span><span class="p">)</span></div>
+</span><span data-line="77">        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stopped filming, saved output video&quot;</span><span class="p">)</span></div>
 </div>
 
-</span><span data-line="78">
 </span></pre></div>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">

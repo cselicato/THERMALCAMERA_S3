@@ -4,10 +4,18 @@ thermocam package
 Submodules
 ----------
 
-thermocam.controls module
+thermocam.callbacks module
 -------------------------
 
-.. automodule:: thermocam.controls
+.. automodule:: thermocam.callbacks
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+thermocam.handler module
+--------------------
+
+.. automodule:: thermocam.handler
    :members:
    :show-inheritance:
    :undoc-members:
@@ -16,6 +24,14 @@ thermocam.roi module
 --------------------
 
 .. automodule:: thermocam.roi
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+thermocam.settings module
+--------------------
+
+.. automodule:: thermocam.settings
    :members:
    :show-inheritance:
    :undoc-members:

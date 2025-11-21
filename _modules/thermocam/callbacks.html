@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="violet" data-content_root="../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>thermocam.callbacks - thermocam 1.0 documentation</title><link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../_static/shibuya.css?v=14737038" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../_static/print.css?v=20ff2c19" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    <meta property="og:type" content="website"/><meta property="og:title" content="thermocam.callbacks"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../index.html">
+      
+      
+      <strong>thermocam</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials"></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><p class="caption" role="heading" aria-level="3"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">thermocam</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../thermocam.html">thermocam package</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">thermocam</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">Module code</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">thermocam.callbacks</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+        <article class="yue" role="main">
+          <h1>Source code for thermocam.callbacks</h1><div class="highlight"><pre>
+<span></span><span data-line="1"><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="2"><span class="sd">Callbacks module for GUI interaction and MQTT message handling</span>
+</span><span data-line="3"><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="4">
+</span><span data-line="5"><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+</span><span data-line="6"><span class="kn">from</span><span class="w"> </span><span class="nn">loguru</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
+</span><span data-line="7">
+</span><span data-line="8"><span class="kn">from</span><span class="w"> </span><span class="nn">thermocam</span><span class="w"> </span><span class="kn">import</span> <span class="n">MQTT_PATH</span>
+</span><span data-line="9">
+</span><span data-line="10">
+<div class="viewcode-block" id="GUICallbacks">
+<a class="viewcode-back" href="../../thermocam.html#thermocam.callbacks.GUICallbacks">[docs]</a>
+</span><span data-line="11"><span class="k">class</span><span class="w"> </span><span class="nc">GUICallbacks</span><span class="p">():</span>
+</span><span data-line="12"><span class="w">    </span><span class="sd">&quot;&quot;&quot; Defines all callback functions used by the GUI in the Display and ControlPanel</span>
+</span><span data-line="13">
+</span><span data-line="14"><span class="sd">    Contains event handlers for mouse clicks on the thermal image,</span>
+</span><span data-line="15"><span class="sd">    control panel buttons, checkbox toggles, text box input, and menu</span>
+</span><span data-line="16"><span class="sd">    selections. Each callback delegates the execution of the action to the</span>
+</span><span data-line="17"><span class="sd">    handler (instance of the class ThermoHandler)</span>
+</span><span data-line="18">
+</span><span data-line="19"><span class="sd">    Parameters</span>
+</span><span data-line="20"><span class="sd">    ----------</span>
+</span><span data-line="21"><span class="sd">    handler : thermocam.handler.ThermoHandler</span>
+</span><span data-line="22"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="23">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
+</span><span data-line="24">        <span class="bp">self</span><span class="o">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">handler</span>
+</span><span data-line="25">
+<div class="viewcode-block" id="GUICallbacks.on_click">
+<a class="viewcode-back" href="../../thermocam.html#thermocam.callbacks.GUICallbacks.on_click">[docs]</a>
+</span><span data-line="26">    <span class="k">def</span><span class="w"> </span><span class="nf">on_click</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+</span><span data-line="27"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="28"><span class="sd">        Handle mouse clicks on the thermal image display.</span>
+</span><span data-line="29">
+</span><span data-line="30"><span class="sd">        Depending on the state of the &quot;Select area&quot; checkbox, it can select single</span>
+</span><span data-line="31"><span class="sd">        pixels (checkbutton OFF) or an area (ON).</span>
+</span><span data-line="32">
+</span><span data-line="33"><span class="sd">        A click records a single pixel. If the pixel is new, its coordinates</span>
+</span><span data-line="34"><span class="sd">        are published over MQTT and drawn on the figure.</span>
+</span><span data-line="35">
+</span><span data-line="36"><span class="sd">        Two clicks define a rectangular area. After the second click, the</span>
+</span><span data-line="37"><span class="sd">        area is computed, drawn, and published over MQTT. A third click resets</span>
+</span><span data-line="38"><span class="sd">        the selection to allow defining a new area.</span>
+</span><span data-line="39">
+</span><span data-line="40"><span class="sd">        Clicks outside the image axes are ignored.</span>
+</span><span data-line="41">
+</span><span data-line="42"><span class="sd">        Parameters</span>
+</span><span data-line="43"><span class="sd">        ----------</span>
+</span><span data-line="44"><span class="sd">        event : matplotlib.backend_bases.MouseEvent</span>
+</span><span data-line="45"><span class="sd">            The mouse event triggered by the click</span>
+</span><span data-line="46"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="47">        <span class="k">if</span> <span class="ow">not</span> <span class="n">event</span><span class="o">.</span><span class="n">inaxes</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">ax_img</span><span class="p">:</span>
+</span><span data-line="48">            <span class="c1"># when the click is outside of the axes do nothing</span>
+</span><span data-line="49">            <span class="k">return</span>
+</span><span data-line="50">
+</span><span data-line="51">        <span class="c1"># get coordinates of the mouse click</span>
+</span><span data-line="52">        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">xdata</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+</span><span data-line="53">        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">ydata</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+</span><span data-line="54">
+</span><span data-line="55">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">area_button</span><span class="o">.</span><span class="n">get_status</span><span class="p">()[</span><span class="mi">0</span><span class="p">]:</span>
+</span><span data-line="56">            <span class="c1"># if area button is clicked define area (two clicks are needed)</span>
+</span><span data-line="57">            <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">clicks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">clicks</span><span class="p">,</span> <span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="58">
+</span><span data-line="59">            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">clicks</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">2</span><span class="p">:</span>   <span class="c1"># reset area with more than two clicks</span>
+</span><span data-line="60">                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Click again to redefine area&quot;</span><span class="p">)</span>
+</span><span data-line="61">                <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">clicks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+</span><span data-line="62">
+</span><span data-line="63">            <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">draw_clicks</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">clicks</span><span class="p">)</span>
+</span><span data-line="64">
+</span><span data-line="65">            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">clicks</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+</span><span data-line="66">                <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">area</span><span class="o">.</span><span class="n">get_from_click</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">clicks</span><span class="p">)</span>    <span class="c1"># get defined area</span>
+</span><span data-line="67">                <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">update_area</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">area</span><span class="p">)</span>    <span class="c1">#update drawn area</span>
+</span><span data-line="68">                <span class="c1"># publish the selected area</span>
+</span><span data-line="69">                <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="s2">&quot;/singlecameras/camera1/area&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">area</span><span class="o">.</span><span class="n">pub_area</span><span class="p">())</span>
+</span><span data-line="70">
+</span><span data-line="71">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="72">            <span class="c1"># if area button is not clicked get point coordinates and publish them</span>
+</span><span data-line="73">            <span class="c1"># if coordinates are already present, it does not append nor publish them</span>
+</span><span data-line="74">            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">single_pixels</span><span class="o">.</span><span class="n">get_from_click</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+</span><span data-line="75">                <span class="c1"># publish position of the last pixel</span>
+</span><span data-line="76">                <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="s2">&quot;/singlecameras/camera1/pixels/coord&quot;</span><span class="p">,</span>
+</span><span data-line="77">                                      <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">single_pixels</span><span class="o">.</span><span class="n">new_pixel</span><span class="p">())</span>
+</span><span data-line="78">                <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">update_pixels</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">single_pixels</span><span class="p">)</span></div>
+
+</span><span data-line="79">
+<div class="viewcode-block" id="GUICallbacks.video_button_cb">
+<a class="viewcode-back" href="../../thermocam.html#thermocam.callbacks.GUICallbacks.video_button_cb">[docs]</a>
+</span><span data-line="80">    <span class="k">def</span><span class="w"> </span><span class="nf">video_button_cb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+</span><span data-line="81"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="82"><span class="sd">        Callback executed when &quot;Video&quot; checkbox changes state:</span>
+</span><span data-line="83"><span class="sd">        - if video recording is off, it starts the video</span>
+</span><span data-line="84"><span class="sd">        - if the video is being recorde, it stops it and saves the file    </span>
+</span><span data-line="85">
+</span><span data-line="86"><span class="sd">        Parameters</span>
+</span><span data-line="87"><span class="sd">        ----------</span>
+</span><span data-line="88"><span class="sd">        label : str</span>
+</span><span data-line="89"><span class="sd">            Argument needed for compatibility with matplotlib widgets</span>
+</span><span data-line="90"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="91">        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">video</span><span class="o">.</span><span class="n">filming</span><span class="p">:</span>
+</span><span data-line="92">            <span class="c1"># when checkbox is clicked and previously the video was not being saved,</span>
+</span><span data-line="93">            <span class="c1"># start video</span>
+</span><span data-line="94">            <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">video</span><span class="o">.</span><span class="n">start_video</span><span class="p">()</span>
+</span><span data-line="95">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="96">            <span class="c1"># if video was being taken, stop and save the file</span>
+</span><span data-line="97">            <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">video</span><span class="o">.</span><span class="n">stop_video</span><span class="p">()</span></div>
+
+</span><span data-line="98">
+</span><span data-line="99">
+</span><span data-line="100">    <span class="c1"># callbacks for control panel buttons</span>
+<div class="viewcode-block" id="GUICallbacks.reset_px_cb">
+<a class="viewcode-back" href="../../thermocam.html#thermocam.callbacks.GUICallbacks.reset_px_cb">[docs]</a>
+</span><span data-line="101">    <span class="k">def</span><span class="w"> </span><span class="nf">reset_px_cb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+</span><span data-line="102"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="103"><span class="sd">        Publish a request to reset all selected single pixels.</span>
+</span><span data-line="104">
+</span><span data-line="105"><span class="sd">        Parameters</span>
+</span><span data-line="106"><span class="sd">        ----------</span>
+</span><span data-line="107"><span class="sd">        event : Event</span>
+</span><span data-line="108"><span class="sd">            Button press event</span>
+</span><span data-line="109"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="110">        <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="s2">&quot;/singlecameras/camera1/pixels/reset&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">)</span></div>
+
+</span><span data-line="111">
+<div class="viewcode-block" id="GUICallbacks.reset_a_cb">
+<a class="viewcode-back" href="../../thermocam.html#thermocam.callbacks.GUICallbacks.reset_a_cb">[docs]</a>
+</span><span data-line="112">    <span class="k">def</span><span class="w"> </span><span class="nf">reset_a_cb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+</span><span data-line="113"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="114"><span class="sd">        Publish a request to reset the selected area.</span>
+</span><span data-line="115">
+</span><span data-line="116"><span class="sd">        Parameters</span>
+</span><span data-line="117"><span class="sd">        ----------</span>
+</span><span data-line="118"><span class="sd">        event : Event</span>
+</span><span data-line="119"><span class="sd">            Button press event</span>
+</span><span data-line="120"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="121">        <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="s2">&quot;/singlecameras/camera1/area/reset&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">)</span></div>
+
+</span><span data-line="122">
+<div class="viewcode-block" id="GUICallbacks.info_cb">
+<a class="viewcode-back" href="../../thermocam.html#thermocam.callbacks.GUICallbacks.info_cb">[docs]</a>
+</span><span data-line="123">    <span class="k">def</span><span class="w"> </span><span class="nf">info_cb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+</span><span data-line="124"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="125"><span class="sd">        Request an information update from the AtomS3 device.</span>
+</span><span data-line="126">
+</span><span data-line="127"><span class="sd">        Sends an MQTT message asking the device to publish the current settings,</span>
+</span><span data-line="128"><span class="sd">        pixels and area</span>
+</span><span data-line="129">
+</span><span data-line="130"><span class="sd">        Parameters</span>
+</span><span data-line="131"><span class="sd">        ----------</span>
+</span><span data-line="132"><span class="sd">        event : Event</span>
+</span><span data-line="133"><span class="sd">            Button press event</span>
+</span><span data-line="134"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="135">        <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="s2">&quot;/singlecameras/camera1/info_request&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">)</span>
+</span><span data-line="136">        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Sending request to AtomS3&quot;</span><span class="p">)</span></div>
+
+</span><span data-line="137">
+<div class="viewcode-block" id="GUICallbacks.apply_set">
+<a class="viewcode-back" href="../../thermocam.html#thermocam.callbacks.GUICallbacks.apply_set">[docs]</a>
+</span><span data-line="138">    <span class="k">def</span><span class="w"> </span><span class="nf">apply_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+</span><span data-line="139"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="140"><span class="sd">        Publish the current settings to the AtomS3 device.</span>
+</span><span data-line="141">
+</span><span data-line="142"><span class="sd">        Parameters</span>
+</span><span data-line="143"><span class="sd">        ----------</span>
+</span><span data-line="144"><span class="sd">        event : Event</span>
+</span><span data-line="145"><span class="sd">            Button press event</span>
+</span><span data-line="146"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="147">        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Sending new settings to AtomS3&quot;</span><span class="p">)</span>
+</span><span data-line="148">        <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="s2">&quot;/singlecameras/camera1/settings&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">publish_form</span><span class="p">())</span></div>
+
+</span><span data-line="149">
+<div class="viewcode-block" id="GUICallbacks.reset_set">
+<a class="viewcode-back" href="../../thermocam.html#thermocam.callbacks.GUICallbacks.reset_set">[docs]</a>
+</span><span data-line="150">    <span class="k">def</span><span class="w"> </span><span class="nf">reset_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+</span><span data-line="151"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="152"><span class="sd">        Restore default settings and publish them to the device.</span>
+</span><span data-line="153">
+</span><span data-line="154"><span class="sd">        Parameters</span>
+</span><span data-line="155"><span class="sd">        ----------</span>
+</span><span data-line="156"><span class="sd">        event : Event</span>
+</span><span data-line="157"><span class="sd">            Button press event</span>
+</span><span data-line="158"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="159">        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Sending default settings to AtomS3&quot;</span><span class="p">)</span>
+</span><span data-line="160">        <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">default</span><span class="p">()</span>
+</span><span data-line="161">        <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="s2">&quot;/singlecameras/camera1/settings&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">publish_form</span><span class="p">())</span></div>
+
+</span><span data-line="162">
+</span><span data-line="163">    <span class="c1"># callbacks for textboxes on control panel</span>
+<div class="viewcode-block" id="GUICallbacks.set_shift">
+<a class="viewcode-back" href="../../thermocam.html#thermocam.callbacks.GUICallbacks.set_shift">[docs]</a>
+</span><span data-line="164">    <span class="k">def</span><span class="w"> </span><span class="nf">set_shift</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expression</span><span class="p">):</span>
+</span><span data-line="165"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="166"><span class="sd">        Set the detector shift value based on textbox content.</span>
+</span><span data-line="167">
+</span><span data-line="168"><span class="sd">        Parameters</span>
+</span><span data-line="169"><span class="sd">        ----------</span>
+</span><span data-line="170"><span class="sd">        expression : str</span>
+</span><span data-line="171"><span class="sd">            The value typed into the textbox. Must be convertible to float</span>
+</span><span data-line="172"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="173">        <span class="c1"># TODO: I have no idea of the allowed range for this parameter</span>
+</span><span data-line="174">        <span class="k">try</span><span class="p">:</span>
+</span><span data-line="175">            <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">shift</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">expression</span><span class="p">)</span>
+</span><span data-line="176">        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+</span><span data-line="177">            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Invalid input for shift: it must be a number.&quot;</span><span class="p">)</span></div>
+
+</span><span data-line="178">
+<div class="viewcode-block" id="GUICallbacks.set_em">
+<a class="viewcode-back" href="../../thermocam.html#thermocam.callbacks.GUICallbacks.set_em">[docs]</a>
+</span><span data-line="179">    <span class="k">def</span><span class="w"> </span><span class="nf">set_em</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expression</span><span class="p">):</span>
+</span><span data-line="180"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="181"><span class="sd">        Set the emissivity value based on textbox input.</span>
+</span><span data-line="182">
+</span><span data-line="183"><span class="sd">        Acceptable range is 0 &lt; emissivity &lt;= 1.  </span>
+</span><span data-line="184"><span class="sd">        Invalid input triggers a warning and highlights the textbox in red.</span>
+</span><span data-line="185">
+</span><span data-line="186"><span class="sd">        Parameters</span>
+</span><span data-line="187"><span class="sd">        ----------</span>
+</span><span data-line="188"><span class="sd">        expression : str</span>
+</span><span data-line="189"><span class="sd">            The value typed into the textbox. Must be convertible to float</span>
+</span><span data-line="190"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="191">        <span class="k">try</span><span class="p">:</span>
+</span><span data-line="192">            <span class="n">em</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">expression</span><span class="p">)</span>
+</span><span data-line="193">            <span class="k">if</span> <span class="mf">0.</span> <span class="o">&lt;</span> <span class="n">em</span> <span class="o">&lt;=</span> <span class="mf">1.</span><span class="p">:</span>
+</span><span data-line="194">                <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">panel</span><span class="o">.</span><span class="n">emissivity_box</span><span class="o">.</span><span class="n">text_disp</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+</span><span data-line="195">                <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">emissivity</span> <span class="o">=</span> <span class="n">em</span>
+</span><span data-line="196">            <span class="k">else</span><span class="p">:</span>
+</span><span data-line="197">                <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">panel</span><span class="o">.</span><span class="n">emissivity_box</span><span class="o">.</span><span class="n">text_disp</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
+</span><span data-line="198">                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Invalid emissivity: it must be between 0 and 1.&quot;</span><span class="p">)</span>
+</span><span data-line="199">        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+</span><span data-line="200">            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Invalid input for emissivity: it must be a number.&quot;</span><span class="p">)</span></div>
+
+</span><span data-line="201">
+</span><span data-line="202">    <span class="c1"># callbacks for menus on control panel</span>
+<div class="viewcode-block" id="GUICallbacks.mode_changed">
+<a class="viewcode-back" href="../../thermocam.html#thermocam.callbacks.GUICallbacks.mode_changed">[docs]</a>
+</span><span data-line="203">    <span class="k">def</span><span class="w"> </span><span class="nf">mode_changed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+</span><span data-line="204"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="205"><span class="sd">        Update the selected readout mode.</span>
+</span><span data-line="206">
+</span><span data-line="207"><span class="sd">        Parameters</span>
+</span><span data-line="208"><span class="sd">        ----------</span>
+</span><span data-line="209"><span class="sd">        label : str</span>
+</span><span data-line="210"><span class="sd">            The readout mode selected from the menu</span>
+</span><span data-line="211"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="212">        <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">label</span></div>
+
+</span><span data-line="213">
+</span><span data-line="214">
+<div class="viewcode-block" id="GUICallbacks.set_rate">
+<a class="viewcode-back" href="../../thermocam.html#thermocam.callbacks.GUICallbacks.set_rate">[docs]</a>
+</span><span data-line="215">    <span class="k">def</span><span class="w"> </span><span class="nf">set_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+</span><span data-line="216"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="217"><span class="sd">        Update the acquisition rate.</span>
+</span><span data-line="218">
+</span><span data-line="219"><span class="sd">        Parameters</span>
+</span><span data-line="220"><span class="sd">        ----------</span>
+</span><span data-line="221"><span class="sd">        label : str</span>
+</span><span data-line="222"><span class="sd">            The rate value from the menu, converted to float</span>
+</span><span data-line="223"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="224">        <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">rate</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">label</span><span class="p">)</span></div>
+</div>
+
+</span><span data-line="225">
+</span><span data-line="226">
+<div class="viewcode-block" id="MQTTCallbacks">
+<a class="viewcode-back" href="../../thermocam.html#thermocam.callbacks.MQTTCallbacks">[docs]</a>
+</span><span data-line="227"><span class="k">class</span><span class="w"> </span><span class="nc">MQTTCallbacks</span><span class="p">():</span>
+</span><span data-line="228"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Acts as an intermediary between the MQTT client and the handler</span>
+</span><span data-line="229">
+</span><span data-line="230"><span class="sd">    Defines the MQTT calbacks that are executed when the client connects</span>
+</span><span data-line="231"><span class="sd">    and when a message is received-</span>
+</span><span data-line="232"><span class="sd">    It does not actually process the data, the processing is done by the</span>
+</span><span data-line="233"><span class="sd">    handler.</span>
+</span><span data-line="234">
+</span><span data-line="235"><span class="sd">    Parameters</span>
+</span><span data-line="236"><span class="sd">    ----------</span>
+</span><span data-line="237"><span class="sd">    handler : thermocam.handler.ThermoHandler</span>
+</span><span data-line="238"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="239">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
+</span><span data-line="240">        <span class="bp">self</span><span class="o">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">handler</span>
+</span><span data-line="241">
+<div class="viewcode-block" id="MQTTCallbacks.on_connect">
+<a class="viewcode-back" href="../../thermocam.html#thermocam.callbacks.MQTTCallbacks.on_connect">[docs]</a>
+</span><span data-line="242">    <span class="k">def</span><span class="w"> </span><span class="nf">on_connect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">userdata</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">reason_code</span><span class="p">,</span> <span class="n">properties</span><span class="p">):</span>
+</span><span data-line="243"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="244"><span class="sd">        Callback executed when the MQTT client successfully connects to the broker</span>
+</span><span data-line="245">
+</span><span data-line="246"><span class="sd">        Upon connection, this function subscribes to the topic(s) defined by</span>
+</span><span data-line="247"><span class="sd">        `MQTT_PATH`. Subscribing inside the connection callback ensures that</span>
+</span><span data-line="248"><span class="sd">        subscriptions are not lost if the client disconnects and reconnects</span>
+</span><span data-line="249">
+</span><span data-line="250"><span class="sd">        Parameters</span>
+</span><span data-line="251"><span class="sd">        ----------</span>
+</span><span data-line="252"><span class="sd">        client : paho.mqtt.client.Client</span>
+</span><span data-line="253"><span class="sd">        userdata : any</span>
+</span><span data-line="254"><span class="sd">        flags : dict</span>
+</span><span data-line="255"><span class="sd">        reason_code : int</span>
+</span><span data-line="256"><span class="sd">        properties : paho.mqtt.properties.Properties</span>
+</span><span data-line="257"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="258">
+</span><span data-line="259">        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Connected with result code </span><span class="si">{</span><span class="n">reason_code</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span data-line="260">        <span class="n">client</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="n">MQTT_PATH</span><span class="p">)</span></div>
+
+</span><span data-line="261">
+<div class="viewcode-block" id="MQTTCallbacks.on_message">
+<a class="viewcode-back" href="../../thermocam.html#thermocam.callbacks.MQTTCallbacks.on_message">[docs]</a>
+</span><span data-line="262">    <span class="k">def</span><span class="w"> </span><span class="nf">on_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">userdata</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+</span><span data-line="263"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="264"><span class="sd">        Callback executed when the MQTT client receives a message</span>
+</span><span data-line="265"><span class="sd">    </span>
+</span><span data-line="266"><span class="sd">        Parameters</span>
+</span><span data-line="267"><span class="sd">        ----------</span>
+</span><span data-line="268"><span class="sd">        client : paho.mqtt.client.Client</span>
+</span><span data-line="269"><span class="sd">        userdata : any</span>
+</span><span data-line="270"><span class="sd">        msg : paho.mqtt.client.MQTTMessage</span>
+</span><span data-line="271"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="272">        <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">handle_message</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+</div>
+
+</span></pre></div>
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2025, Carmen Selicato</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials"></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/shibuya.js?v=c1cf1a6b"></script></body>
+</html>

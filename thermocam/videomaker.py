@@ -1,3 +1,7 @@
+"""
+Define the video-recording object to save Matplotlib figures as mp4 files.
+"""
+
 from datetime import datetime
 import numpy as np
 import cv2
@@ -8,7 +12,29 @@ from thermocam import THERMOCAM_VIDEO
 
 class VideoMaker:
     """
-    Class used to save a video of the plot
+    Class for creating mp4 videos from Matplotlib figure frames.
+
+    Uses cv2.VideoWriter object and provides methods to: start video, add frame,
+    stop video and save the output (stored in the directory defined by
+    "thermocam.THERMOCAM_VIDEO"). The video is timestamped with the start time.
+
+    Parameters
+    ----------
+    size : tuple of int, default: (720, 960)
+        Output video size in pixels
+    fps : int, default: 4
+        Frame rate of the output video.
+
+    Attributes
+    ----------
+    filming : bool
+        Whether recording is currently active.
+    size : tuple of int
+        Output video size in pixels.
+    fps : int
+        Output video framerate.
+    video : cv2.VideoWriter
+        Video writer object.
     """
 
     def __init__(self, size=(720,960), fps=4):
@@ -18,7 +44,10 @@ class VideoMaker:
 
     def start_video(self):
         """
-        Create a VideoWriter object
+        Initialize a new video file for recording.
+
+        Creates a timestamped mp4 file in the directory defined by
+        "thermocam.THERMOCAM_VIDEO" and creates a cv2.VideoWriter object.
 
         Parameters
         ----------
@@ -36,7 +65,7 @@ class VideoMaker:
 
     def add_frame(self, fig, bbox_inches=None):
         """
-        Add frame to video if filming, else do nothing
+        Add frame from Matplotlib figure to video if filming=True, else do nothing
     
         Parameters
         ----------
@@ -65,7 +94,7 @@ class VideoMaker:
 
     def stop_video(self):
         """
-        Save output video
+        Finalize and close the video file, set filming = False.
 
         Parameters
         ----------

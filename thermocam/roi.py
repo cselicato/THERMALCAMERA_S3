@@ -1,3 +1,15 @@
+""" 
+Define classes for the definition of "interesting" pixels and area, and to handle
+the received (through MQTT) data about them.
+
+Constants
+---------
+MIN_X, MAX_X : int
+    Allowed x coordinate bounds.
+MIN_Y, MAX_Y : int
+    Allowed y coordinate bounds.
+"""
+
 from datetime import datetime
 import re
 import numpy as np
@@ -10,7 +22,23 @@ MAX_Y = 31
 
 class InterestingPixels:
     """
-    Class to define, store and do stuff with the interesting pixels 
+    Class to manage the defined pixels.
+    
+    It stores:
+    - the current pixel list,
+    - pixel temperature/time data for each one,
+    - the Matplotlib "Line2D" object for each pixel
+
+    Pixel coordinates can be defined by the interactions of the user with the GUI,
+    or can be parsed from comma-separated "x y" MQTT messages.
+
+    Attributes
+    ----------
+    p : array-like with shape (N, 2)
+        Currently defined pixels.
+    pixels_data : dict
+        Dictionary mapping (x, y) tuples to dictionary containing time and temperature
+        data and Line2D
     """
 
     def __init__(self):
@@ -19,7 +47,11 @@ class InterestingPixels:
                  #  with the times, values and Line2D
 
     def out_data(self):
-        """ Return a string with data to be written in output file
+        """
+        Return a string with the defined pixels' data to be written in output file.
+
+        Data is formatted as follows:
+        "(x, y), T" repeated for eache defined pixel and separated by commas
         """
         out = ""
         # loop over data dict
@@ -31,7 +63,8 @@ class InterestingPixels:
 
     def get_from_str(self, msg):
         """
-        If not none, get current pixels
+        Parse current pixels' coordinates from MQTT message. Coordinates already present
+        are ignored. Invalid formatting triggers a warning.
 
         Parameters
         ----------
@@ -54,6 +87,11 @@ class InterestingPixels:
 
     def handle_mqtt(self, msg):
         """
+        Update current pixel definition based on received MQTT message.
+
+        If message is "none" pixel definition and data is cleared. Otherwise,
+        method get_from_str is called.
+
         Parameters
         ----------
         msg : str
@@ -69,18 +107,22 @@ class InterestingPixels:
 
     def get_from_click(self, x, y):
         """
-        if coordinates are already present, do not append them
-        Also makes sure they are within correct bounds
+        Define new pixel from user's mouse click.
+
+        Performs a bound check and, if coordinates are already present, they
+        are not appended.
 
         Parameters
         ----------
         x : int
+            x coordinate of the mouse click
         y : int
+            y coordinate of the mouse click
 
         Returns
         -------
         bool
-            true if pixel has been added
+            True if pixel has been added, False otherwise
         """
 
         if x>MAX_X:
@@ -98,7 +140,8 @@ class InterestingPixels:
 
     def new_pixel(self):
         """
-        Implemented to make publishing new pixel easier
+        Retrieve the last defined pixel and return it in a string format.
+        Implemented to make publishing new pixel easier.
 
         Returns
         -------
@@ -112,7 +155,16 @@ class InterestingPixels:
 
     def update_data(self, msg, ax, t):
         """
-        Get pixel(s) data from message and update live plot
+        Parse pixel(s) data from message and update live plots.
+
+        Parameters
+        ----------
+        msg : str
+            received MQTT message as a string, containing comma separated "x y T" entries.
+        ax : matplotlib.axes.Axes
+            Axes on which pixel data is drawn.
+        t : datetime
+            Timestamp of start time.
         """
 
         try:
@@ -147,7 +199,24 @@ class InterestingPixels:
 
 class InterestingArea:
     """
-    Class used to define the interesting area
+    Class to manage the defined area.
+    
+    It stores:
+    - the current area definition,
+    - area temperature/time data,
+    - the Matplotlib "Line2D" object for min, max and avg temperature.
+
+    Area can be defined by the interactions of the user with the GUI,
+    or can be parsed from MQTT messages.
+
+    
+    Attributes
+    ----------
+    a : array-like with shape (a, 2)
+        Currently defined area as (x_left, y_low, width, height).
+    area_data : dict
+        Dictionary mapping str(self.a) to dictionary containing time and temperature
+        data and Line2D
     """
 
     def __init__(self):
@@ -156,22 +225,32 @@ class InterestingArea:
                # the times, values and Line2D (even though only one area at the time is defined)
 
     def defined(self):
-        """Return true if area is currently defined
+        """Return whether an area is currently defined.
+
+        Returns
+        -------
+        bool
+            True if an area is defined, False otherwise.       
         """
-        # TODO: there surely is a better way
         return len(self.a)!=0
 
     def pub_area(self):
         """
-        Implemented to make publishing easier: it has to be formatted as
-        "x_left y_low w h"
+        Format the defined area for MQTT publishing.
+        It has to be formatted as "x_left y_low w h"
+
+        Returns
+        -------
+        str
+            "x_left y_low w h"
         """
 
         return f"{self.a[0][0]} {self.a[0][1]} {self.a[0][2]} {self.a[0][3]}" # it's a bit ugly
 
     def get_from_str(self, msg):
         """
-        If not none, get area definition from MQTT message as x_left, y_low, width, height
+        Parse area definition from MQTT message as x_left, y_low, width, height.
+        Invalid formatting triggers a warning and retains the previous area.
 
         Parameters
         ----------
@@ -190,10 +269,10 @@ class InterestingArea:
 
     def handle_mqtt(self, msg):
         """
-        Get current area from MQTT message.
+        Update current area definition based on received MQTT message.
 
-        If no area is defined ("none") remove drawing, else (if message can be correctly parsed)
-        redefine area and then remove previous drawing
+        If message is "none" area definition and data is cleared. Otherwise,
+        method get_from_str is called.
 
         Parameters
         ----------
@@ -210,7 +289,9 @@ class InterestingArea:
             logger.debug(f"Current area: {self.a}")
 
     def get_from_click(self, c):
-        """Define area from mouse clicks
+        """
+        Define new area from user's mouse clicks.
+        Performs a bounds check.
 
         Parameters
         ----------
@@ -241,7 +322,17 @@ class InterestingArea:
 
     def update_data(self, msg, ax, t):
         """
-        Get area data from message and update live plot
+        Parse area data from received MQTT message and update live plots.
+        If received data has invalid format, a warning is triggered.
+        
+        Parameters
+        ----------
+        msg : str
+              received MQTT message as a string
+        ax : matplotlib.axes.Axes
+            Axes on which area data is drawn.
+        t : datetime
+            Timestamp of start time.
         """
         try:
             logger.debug(msg)
@@ -279,7 +370,11 @@ class InterestingArea:
             logger.warning(f"Received area data has invalid format: {msg}")
 
     def out_data(self):
-        """ Return a string with data to be written in output file
+        """
+        Return a string with the defined area data to be written in output file.
+
+        Data is formatted as follows:
+        "x_left, y_low, width, height, avg, min, max"
         """
         x, y, w, h = self.a[0][:]
         a = self.area_data[str(self.a)]

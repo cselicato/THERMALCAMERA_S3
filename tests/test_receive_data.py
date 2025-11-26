@@ -5,8 +5,8 @@ Usage: run this script and then run receive_data to visually check
 it plots what expected
 """
 
-import ast
 import time
+import numpy as np
 import paho.mqtt.client as mqtt
 from loguru import logger
 
@@ -36,9 +36,10 @@ class DummyCamera:
     def image(self):
         """ Publish image
         """
-        with open("tests/image.txt", encoding="utf-8") as file:
-            lines = [line.rstrip() for line in file]
-        img = ast.literal_eval(lines[0])
+        # generate random image
+        values = np.random.rand((32*24))*30
+        values = np.float32(values)
+        img = values.tobytes()
         self.client.publish("/singlecameras/camera1/image", img)
 
     def empty(self):

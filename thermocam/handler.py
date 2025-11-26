@@ -54,7 +54,7 @@ class ThermoHandler():
             Output files for data, if saving is enabled.
     """
 
-    def __init__(self, save=False,max_dead_time = timedelta(seconds=2)):
+    def __init__(self, save=True,max_dead_time = timedelta(seconds=2)):
         self.client = None
 
         self.start_time = datetime.now()

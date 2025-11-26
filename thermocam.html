@@ -105,7 +105,10 @@ data-aria-dark="Switch to auto color mode">
 </ul>
 </li>
 <li><a class="reference internal" href="#module-thermocam.roi">thermocam.roi module</a><ul>
+<li><a class="reference internal" href="#constants">Constants</a></li>
 <li><a class="reference internal" href="#thermocam.roi.InterestingArea"><code class="docutils literal notranslate"><span class="pre">InterestingArea</span></code></a><ul>
+<li><a class="reference internal" href="#thermocam.roi.InterestingArea.a"><code class="docutils literal notranslate">a</span></code></a></li>
+<li><a class="reference internal" href="#thermocam.roi.InterestingArea.area_data"><code class="docutils literal notranslate">area_data</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.roi.InterestingArea.defined"><code class="docutils literal notranslate">defined()</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.roi.InterestingArea.get_from_click"><code class="docutils literal notranslate">get_from_click()</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.roi.InterestingArea.get_from_str"><code class="docutils literal notranslate">get_from_str()</span></code></a></li>
@@ -116,6 +119,8 @@ data-aria-dark="Switch to auto color mode">
 </ul>
 </li>
 <li><a class="reference internal" href="#thermocam.roi.InterestingPixels"><code class="docutils literal notranslate"><span class="pre">InterestingPixels</span></code></a><ul>
+<li><a class="reference internal" href="#thermocam.roi.InterestingPixels.p"><code class="docutils literal notranslate">p</span></code></a></li>
+<li><a class="reference internal" href="#thermocam.roi.InterestingPixels.pixels_data"><code class="docutils literal notranslate">pixels_data</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.roi.InterestingPixels.get_from_click"><code class="docutils literal notranslate">get_from_click()</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.roi.InterestingPixels.get_from_str"><code class="docutils literal notranslate">get_from_str()</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.roi.InterestingPixels.handle_mqtt"><code class="docutils literal notranslate">handle_mqtt()</span></code></a></li>
@@ -164,6 +169,10 @@ data-aria-dark="Switch to auto color mode">
 </li>
 <li><a class="reference internal" href="#module-thermocam.videomaker">thermocam.videomaker module</a><ul>
 <li><a class="reference internal" href="#thermocam.videomaker.VideoMaker"><code class="docutils literal notranslate"><span class="pre">VideoMaker</span></code></a><ul>
+<li><a class="reference internal" href="#thermocam.videomaker.VideoMaker.filming"><code class="docutils literal notranslate">filming</span></code></a></li>
+<li><a class="reference internal" href="#thermocam.videomaker.VideoMaker.size"><code class="docutils literal notranslate">size</span></code></a></li>
+<li><a class="reference internal" href="#thermocam.videomaker.VideoMaker.fps"><code class="docutils literal notranslate">fps</span></code></a></li>
+<li><a class="reference internal" href="#thermocam.videomaker.VideoMaker.video"><code class="docutils literal notranslate">video</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.videomaker.VideoMaker.add_frame"><code class="docutils literal notranslate">add_frame()</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.videomaker.VideoMaker.start_video"><code class="docutils literal notranslate">start_video()</span></code></a></li>
 <li><a class="reference internal" href="#thermocam.videomaker.VideoMaker.stop_video"><code class="docutils literal notranslate">stop_video()</span></code></a></li>
@@ -444,7 +453,7 @@ subscriptions are not lost if the client disconnects and reconnects</p>
 <p id="module-thermocam.handler">Define the object that handles everything else: the MQTT callbaks, the GUI and the data</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="thermocam.handler.ThermoHandler">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">thermocam.handler.</span></span><span class="sig-name descname"><span class="pre">ThermoHandler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_dead_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">datetime.timedelta(seconds=2)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/handler.html#ThermoHandler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.handler.ThermoHandler" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">thermocam.handler.</span></span><span class="sig-name descname"><span class="pre">ThermoHandler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_dead_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">datetime.timedelta(seconds=2)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/handler.html#ThermoHandler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.handler.ThermoHandler" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Central handler for GUI elements, MQTT message processing, and output data.</p>
 <p>Connects everything together</p>
@@ -520,21 +529,70 @@ display ONLINE status, otherwise as OFFLINE.</p>
 </section>
 <section id="module-thermocam.roi">
 <span id="thermocam-roi-module"></span><h2>thermocam.roi module<a class="headerlink" href="#module-thermocam.roi" title="Link to this heading">¶</a></h2>
+<p>Define classes for the definition of “interesting” pixels and area, and to handle
+the received (through MQTT) data about them.</p>
+<section id="constants">
+<h3>Constants<a class="headerlink" href="#constants" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>MIN_X, MAX_X<span class="classifier">int</span></dt><dd><p>Allowed x coordinate bounds.</p>
+</dd>
+<dt>MIN_Y, MAX_Y<span class="classifier">int</span></dt><dd><p>Allowed y coordinate bounds.</p>
+</dd>
+</dl>
+</section>
 <dl class="py class">
 <dt class="sig sig-object py" id="thermocam.roi.InterestingArea">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">thermocam.roi.</span></span><span class="sig-name descname"><span class="pre">InterestingArea</span></span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingArea"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingArea" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Class used to define the interesting area</p>
+<p>Class to manage the defined area.</p>
+<p>It stores:
+- the current area definition,
+- area temperature/time data,
+- the Matplotlib “Line2D” object for min, max and avg temperature.</p>
+<p>Area can be defined by the interactions of the user with the GUI,
+or can be parsed from MQTT messages.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="thermocam.roi.InterestingArea.a">
+<span class="sig-name descname"><span class="pre">a</span></span><a class="headerlink" href="#thermocam.roi.InterestingArea.a" title="Link to this definition">¶</a></dt>
+<dd><p>Currently defined area as (x_left, y_low, width, height).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array-like with shape (a, 2)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="thermocam.roi.InterestingArea.area_data">
+<span class="sig-name descname"><span class="pre">area_data</span></span><a class="headerlink" href="#thermocam.roi.InterestingArea.area_data" title="Link to this definition">¶</a></dt>
+<dd><p>Dictionary mapping str(self.a) to dictionary containing time and temperature
+data and Line2D</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.roi.InterestingArea.defined">
 <span class="sig-name descname"><span class="pre">defined</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingArea.defined"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingArea.defined" title="Link to this definition">¶</a></dt>
-<dd><p>Return true if area is currently defined</p>
+<dd><p>Return whether an area is currently defined.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if an area is defined, False otherwise.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.roi.InterestingArea.get_from_click">
 <span class="sig-name descname"><span class="pre">get_from_click</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">c</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingArea.get_from_click"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingArea.get_from_click" title="Link to this definition">¶</a></dt>
-<dd><p>Define area from mouse clicks</p>
+<dd><p>Define new area from user’s mouse clicks.
+Performs a bounds check.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>c</strong> (<em>array-like with shape</em><em> (</em><em>2</em><em>, </em><em>2</em><em>)</em>) – contains the coordinates of the two clicked points</p>
@@ -545,7 +603,8 @@ display ONLINE status, otherwise as OFFLINE.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.roi.InterestingArea.get_from_str">
 <span class="sig-name descname"><span class="pre">get_from_str</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingArea.get_from_str"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingArea.get_from_str" title="Link to this definition">¶</a></dt>
-<dd><p>If not none, get area definition from MQTT message as x_left, y_low, width, height</p>
+<dd><p>Parse area definition from MQTT message as x_left, y_low, width, height.
+Invalid formatting triggers a warning and retains the previous area.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>msg</strong> (<em>str</em>) – received MQTT message as a string</p>
@@ -556,9 +615,9 @@ display ONLINE status, otherwise as OFFLINE.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.roi.InterestingArea.handle_mqtt">
 <span class="sig-name descname"><span class="pre">handle_mqtt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingArea.handle_mqtt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingArea.handle_mqtt" title="Link to this definition">¶</a></dt>
-<dd><p>Get current area from MQTT message.</p>
-<p>If no area is defined (“none”) remove drawing, else (if message can be correctly parsed)
-redefine area and then remove previous drawing</p>
+<dd><p>Update current area definition based on received MQTT message.</p>
+<p>If message is “none” area definition and data is cleared. Otherwise,
+method get_from_str is called.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>msg</strong> (<em>str</em>) – received MQTT message as a string</p>
@@ -569,20 +628,40 @@ redefine area and then remove previous drawing</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.roi.InterestingArea.out_data">
 <span class="sig-name descname"><span class="pre">out_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingArea.out_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingArea.out_data" title="Link to this definition">¶</a></dt>
-<dd><p>Return a string with data to be written in output file</p>
+<dd><p>Return a string with the defined area data to be written in output file.</p>
+<p>Data is formatted as follows:
+“x_left, y_low, width, height, avg, min, max”</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.roi.InterestingArea.pub_area">
 <span class="sig-name descname"><span class="pre">pub_area</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingArea.pub_area"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingArea.pub_area" title="Link to this definition">¶</a></dt>
-<dd><p>Implemented to make publishing easier: it has to be formatted as
-“x_left y_low w h”</p>
+<dd><p>Format the defined area for MQTT publishing.
+It has to be formatted as “x_left y_low w h”</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“x_left y_low w h”</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.roi.InterestingArea.update_data">
 <span class="sig-name descname"><span class="pre">update_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingArea.update_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingArea.update_data" title="Link to this definition">¶</a></dt>
-<dd><p>Get area data from message and update live plot</p>
+<dd><p>Parse area data from received MQTT message and update live plots.
+If received data has invalid format, a warning is triggered.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>msg</strong> (<em>str</em>) – received MQTT message as a string</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib.axes.Axes</em>) – Axes on which area data is drawn.</p></li>
+<li><p><strong>t</strong> (<em>datetime</em>) – Timestamp of start time.</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -591,21 +670,51 @@ redefine area and then remove previous drawing</p>
 <dt class="sig sig-object py" id="thermocam.roi.InterestingPixels">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">thermocam.roi.</span></span><span class="sig-name descname"><span class="pre">InterestingPixels</span></span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingPixels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingPixels" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Class to define, store and do stuff with the interesting pixels</p>
+<p>Class to manage the defined pixels.</p>
+<p>It stores:
+- the current pixel list,
+- pixel temperature/time data for each one,
+- the Matplotlib “Line2D” object for each pixel</p>
+<p>Pixel coordinates can be defined by the interactions of the user with the GUI,
+or can be parsed from comma-separated “x y” MQTT messages.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="thermocam.roi.InterestingPixels.p">
+<span class="sig-name descname"><span class="pre">p</span></span><a class="headerlink" href="#thermocam.roi.InterestingPixels.p" title="Link to this definition">¶</a></dt>
+<dd><p>Currently defined pixels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array-like with shape (N, 2)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="thermocam.roi.InterestingPixels.pixels_data">
+<span class="sig-name descname"><span class="pre">pixels_data</span></span><a class="headerlink" href="#thermocam.roi.InterestingPixels.pixels_data" title="Link to this definition">¶</a></dt>
+<dd><p>Dictionary mapping (x, y) tuples to dictionary containing time and temperature
+data and Line2D</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.roi.InterestingPixels.get_from_click">
 <span class="sig-name descname"><span class="pre">get_from_click</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingPixels.get_from_click"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingPixels.get_from_click" title="Link to this definition">¶</a></dt>
-<dd><p>if coordinates are already present, do not append them
-Also makes sure they are within correct bounds</p>
+<dd><p>Define new pixel from user’s mouse click.</p>
+<p>Performs a bound check and, if coordinates are already present, they
+are not appended.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<em>int</em>)</p></li>
-<li><p><strong>y</strong> (<em>int</em>)</p></li>
+<li><p><strong>x</strong> (<em>int</em>) – x coordinate of the mouse click</p></li>
+<li><p><strong>y</strong> (<em>int</em>) – y coordinate of the mouse click</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>true if pixel has been added</p>
+<dd class="field-even"><p>True if pixel has been added, False otherwise</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>bool</p>
@@ -616,7 +725,8 @@ Also makes sure they are within correct bounds</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.roi.InterestingPixels.get_from_str">
 <span class="sig-name descname"><span class="pre">get_from_str</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingPixels.get_from_str"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingPixels.get_from_str" title="Link to this definition">¶</a></dt>
-<dd><p>If not none, get current pixels</p>
+<dd><p>Parse current pixels’ coordinates from MQTT message. Coordinates already present
+are ignored. Invalid formatting triggers a warning.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>msg</strong> (<em>str</em>) – received MQTT message as a string</p>
@@ -627,7 +737,10 @@ Also makes sure they are within correct bounds</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.roi.InterestingPixels.handle_mqtt">
 <span class="sig-name descname"><span class="pre">handle_mqtt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingPixels.handle_mqtt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingPixels.handle_mqtt" title="Link to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Update current pixel definition based on received MQTT message.</p>
+<p>If message is “none” pixel definition and data is cleared. Otherwise,
+method get_from_str is called.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>msg</strong> (<em>str</em>) – received MQTT message as a string</p>
 </dd>
@@ -637,7 +750,8 @@ Also makes sure they are within correct bounds</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.roi.InterestingPixels.new_pixel">
 <span class="sig-name descname"><span class="pre">new_pixel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingPixels.new_pixel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingPixels.new_pixel" title="Link to this definition">¶</a></dt>
-<dd><p>Implemented to make publishing new pixel easier</p>
+<dd><p>Retrieve the last defined pixel and return it in a string format.
+Implemented to make publishing new pixel easier.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>last pixel coordinates formatted as “x y”</p>
@@ -651,13 +765,24 @@ Also makes sure they are within correct bounds</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.roi.InterestingPixels.out_data">
 <span class="sig-name descname"><span class="pre">out_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingPixels.out_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingPixels.out_data" title="Link to this definition">¶</a></dt>
-<dd><p>Return a string with data to be written in output file</p>
+<dd><p>Return a string with the defined pixels’ data to be written in output file.</p>
+<p>Data is formatted as follows:
+“(x, y), T” repeated for eache defined pixel and separated by commas</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.roi.InterestingPixels.update_data">
 <span class="sig-name descname"><span class="pre">update_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/roi.html#InterestingPixels.update_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.roi.InterestingPixels.update_data" title="Link to this definition">¶</a></dt>
-<dd><p>Get pixel(s) data from message and update live plot</p>
+<dd><p>Parse pixel(s) data from message and update live plots.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>msg</strong> (<em>str</em>) – received MQTT message as a string, containing comma separated “x y T” entries.</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib.axes.Axes</em>) – Axes on which pixel data is drawn.</p></li>
+<li><p><strong>t</strong> (<em>datetime</em>) – Timestamp of start time.</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -927,15 +1052,71 @@ as well as buttons to apply or reset settings</p>
 </section>
 <section id="module-thermocam.videomaker">
 <span id="thermocam-videomaker-module"></span><h2>thermocam.videomaker module<a class="headerlink" href="#module-thermocam.videomaker" title="Link to this heading">¶</a></h2>
+<p>Define the video-recording object to save Matplotlib figures as mp4 files.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="thermocam.videomaker.VideoMaker">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">thermocam.videomaker.</span></span><span class="sig-name descname"><span class="pre">VideoMaker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(720,</span> <span class="pre">960)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/videomaker.html#VideoMaker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.videomaker.VideoMaker" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Class used to save a video of the plot</p>
+<p>Class for creating mp4 videos from Matplotlib figure frames.</p>
+<p>Uses cv2.VideoWriter object and provides methods to: start video, add frame,
+stop video and save the output (stored in the directory defined by
+“thermocam.THERMOCAM_VIDEO”). The video is timestamped with the start time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>size</strong> (<em>tuple</em><em> of </em><em>int</em><em>, </em><em>default:</em><em> (</em><em>720</em><em>, </em><em>960</em><em>)</em>) – Output video size in pixels</p></li>
+<li><p><strong>fps</strong> (<em>int</em><em>, </em><em>default: 4</em>) – Frame rate of the output video.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="thermocam.videomaker.VideoMaker.filming">
+<span class="sig-name descname"><span class="pre">filming</span></span><a class="headerlink" href="#thermocam.videomaker.VideoMaker.filming" title="Link to this definition">¶</a></dt>
+<dd><p>Whether recording is currently active.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="thermocam.videomaker.VideoMaker.size">
+<span class="sig-name descname"><span class="pre">size</span></span><a class="headerlink" href="#thermocam.videomaker.VideoMaker.size" title="Link to this definition">¶</a></dt>
+<dd><p>Output video size in pixels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple of int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="thermocam.videomaker.VideoMaker.fps">
+<span class="sig-name descname"><span class="pre">fps</span></span><a class="headerlink" href="#thermocam.videomaker.VideoMaker.fps" title="Link to this definition">¶</a></dt>
+<dd><p>Output video framerate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="thermocam.videomaker.VideoMaker.video">
+<span class="sig-name descname"><span class="pre">video</span></span><a class="headerlink" href="#thermocam.videomaker.VideoMaker.video" title="Link to this definition">¶</a></dt>
+<dd><p>Video writer object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>cv2.VideoWriter</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.videomaker.VideoMaker.add_frame">
 <span class="sig-name descname"><span class="pre">add_frame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bbox_inches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/videomaker.html#VideoMaker.add_frame"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.videomaker.VideoMaker.add_frame" title="Link to this definition">¶</a></dt>
-<dd><p>Add frame to video if filming, else do nothing</p>
+<dd><p>Add frame from Matplotlib figure to video if filming=True, else do nothing</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -949,7 +1130,9 @@ as well as buttons to apply or reset settings</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.videomaker.VideoMaker.start_video">
 <span class="sig-name descname"><span class="pre">start_video</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/videomaker.html#VideoMaker.start_video"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.videomaker.VideoMaker.start_video" title="Link to this definition">¶</a></dt>
-<dd><p>Create a VideoWriter object</p>
+<dd><p>Initialize a new video file for recording.</p>
+<p>Creates a timestamped mp4 file in the directory defined by
+“thermocam.THERMOCAM_VIDEO” and creates a cv2.VideoWriter object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>none</strong></p>
@@ -960,7 +1143,7 @@ as well as buttons to apply or reset settings</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="thermocam.videomaker.VideoMaker.stop_video">
 <span class="sig-name descname"><span class="pre">stop_video</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/thermocam/videomaker.html#VideoMaker.stop_video"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#thermocam.videomaker.VideoMaker.stop_video" title="Link to this definition">¶</a></dt>
-<dd><p>Save output video</p>
+<dd><p>Finalize and close the video file, set filming = False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>none</strong></p>

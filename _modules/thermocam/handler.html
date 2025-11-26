@@ -163,7 +163,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="54"><span class="sd">            Output files for data, if saving is enabled.</span>
 </span><span data-line="55"><span class="sd">    &quot;&quot;&quot;</span>
 </span><span data-line="56">
-</span><span data-line="57">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">max_dead_time</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">2</span><span class="p">)):</span>
+</span><span data-line="57">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">max_dead_time</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">2</span><span class="p">)):</span>
 </span><span data-line="58">        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span data-line="59">
 </span><span data-line="60">        <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
